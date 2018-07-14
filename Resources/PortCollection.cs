@@ -10,7 +10,7 @@ using System.Windows;
 
 namespace BlueEyes.Resources
 {
-    class PortCollection : ObservableCollection<SerialPortModel>
+    class PortCollection : ObservableCollection<SerialNameModel>
     {
         public PortCollection() : base()
         {
@@ -21,7 +21,7 @@ namespace BlueEyes.Resources
                 {
                     foreach (ManagementObject port in searcher.Get())
                     {
-                        Add(new SerialPortModel((string)port["DeviceID"], (string)port["Caption"]));
+                        Add(new SerialNameModel((string)port["DeviceID"], (string)port["Caption"]));
                         Console.WriteLine(string.Format("DeviceID = {0}, Caption = {1}", (string)port["DeviceID"], (string)port["Caption"]));
                     }
                 }

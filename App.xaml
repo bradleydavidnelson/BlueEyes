@@ -2,7 +2,9 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:res="clr-namespace:BlueEyes.Resources"
-             StartupUri="MainWindowView.xaml">
+             xmlns:views="clr-namespace:BlueEyes.Views"
+             StartupUri="Views/MainView.xaml"
+             ShutdownMode="OnMainWindowClose">
     <Application.Resources>
         <res:PortCollection x:Key="SerialPorts"/>
     </Application.Resources>
