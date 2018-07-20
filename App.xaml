@@ -1,11 +1,19 @@
 ﻿<Application x:Class="BlueEyes.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:res="clr-namespace:BlueEyes.Resources"
+             xmlns:bg="clr-namespace:Bluegiga"
+             xmlns:local="clr-namespace:BlueEyes"
              xmlns:views="clr-namespace:BlueEyes.Views"
-             StartupUri="Views/MainView.xaml"
+             xmlns:models="clr-namespace:BlueEyes.Models"
+             xmlns:properties="clr-namespace:BlueEyes.Properties"
+             StartupUri="Views/MainWindowView.xaml"
              ShutdownMode="OnMainWindowClose">
+    
     <Application.Resources>
-        <res:PortCollection x:Key="SerialPorts"/>
+        <bg:BGLib x:Key="BGLib"/>
+        <models:SerialPortCollection x:Key="SerialPorts"/>
+        <models:BLEPeripheralCollection x:Key="BLEPeripherals"/>
+        <views:LogWindow x:Key="LogWindow"/>
+        <properties:Settings x:Key="Settings"/>
     </Application.Resources>
 </Application>

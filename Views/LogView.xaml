@@ -1,18 +1,14 @@
-﻿<Window x:Class="BlueEyes.Views.LogView"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:BlueEyes.ViewModels"
-        mc:Ignorable="d"
-        Title="Log" Height="300" Width="300"
-        ShowInTaskbar="False">
-
-    <Window.DataContext>
-        <vm:LogViewModel/>
-    </Window.DataContext>
+﻿<UserControl x:Class="BlueEyes.Views.LogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:BlueEyes.Views"
+             xmlns:utilities="clr-namespace:BlueEyes.Utilities"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="300">
     
     <Grid>
-        <TextBox IsReadOnly="True" Background="Black" Foreground="White" Text="{Binding log}"/>
+        <utilities:ScrollingListBox Background="Black" ItemsSource="{Binding Document}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
     </Grid>
-</Window>
+</UserControl>

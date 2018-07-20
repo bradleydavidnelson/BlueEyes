@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace BlueEyes.Views
 {
     /// <summary>
-    /// Interaction logic for LogView.xaml
+    /// Interaction logic for DiscoveredDeviceView.xaml
     /// </summary>
-    public partial class LogView : UserControl
+    public partial class DiscoveredDeviceView : UserControl
     {
-        public LogView()
+        public DiscoveredDeviceView()
         {
             InitializeComponent();
         }

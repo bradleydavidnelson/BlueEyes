@@ -18,16 +18,11 @@ namespace BlueEyes.Views
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainView : Window
+    public partial class MainWindowView : Window
     {
-        public MainView()
+        public MainWindowView()
         {
             InitializeComponent();
-        }
-
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
         }
     }
 }

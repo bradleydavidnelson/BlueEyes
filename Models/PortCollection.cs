@@ -8,11 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace BlueEyes.Resources
+namespace BlueEyes.Models
 {
-    class PortCollection : ObservableCollection<SerialNameModel>
+    class SerialPortCollection : ObservableCollection<SerialNameModel>
     {
-        public PortCollection() : base()
+        public SerialPortCollection() : base()
         {
             try
             {
@@ -22,7 +22,6 @@ namespace BlueEyes.Resources
                     foreach (ManagementObject port in searcher.Get())
                     {
                         Add(new SerialNameModel((string)port["DeviceID"], (string)port["Caption"]));
-                        Console.WriteLine(string.Format("DeviceID = {0}, Caption = {1}", (string)port["DeviceID"], (string)port["Caption"]));
                     }
                 }
             }

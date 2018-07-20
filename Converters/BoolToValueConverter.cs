@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 
 namespace BlueEyes.Converters
 {
     public class BoolToStringConverter : BoolToValueConverter<String> { }
+
+    public class BoolToVisibilityConverter : BoolToValueConverter<Visibility> { }
 
     public class BoolToValueConverter<T> : IValueConverter
     {
@@ -24,7 +27,10 @@ namespace BlueEyes.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            return value != null ? value.Equals(TrueValue) : false;
+            if (value == null)
+                return false;
+            else
+                return value.Equals(TrueValue);
         }
     }
 }

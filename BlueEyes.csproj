@@ -35,9 +35,19 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Expression.Interactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\System.Windows.Interactivity.WPF.2.0.20525\lib\net40\Microsoft.Expression.Interactions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Interactivity, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\System.Windows.Interactivity.WPF.2.0.20525\lib\net40\System.Windows.Interactivity.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -56,17 +66,50 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BlueGiga\BGLib.cs" />
+    <Compile Include="Models\BLEPeripheralCollection.cs" />
+    <Compile Include="Utilities\RelayCommand.cs" />
     <Compile Include="Converters\BoolInverterConverter.cs" />
     <Compile Include="Converters\BoolToValueConverter.cs" />
+    <Compile Include="Models\BLEPeripheralModel.cs" />
+    <Compile Include="MvvmLight\EventToCommand.cs" />
+    <Compile Include="MvvmLight\IEventArgsConverter.cs" />
     <Compile Include="Models\SerialNameModel.cs" />
-    <Compile Include="Resources\BindableBase.cs" />
+    <Compile Include="MvvmLight\RelayCommand.cs" />
+    <Compile Include="MvvmLight\WeakAction.cs" />
+    <Compile Include="MvvmLight\WeakFunc.cs" />
+    <Compile Include="Utilities\BindableBase.cs" />
+    <Compile Include="Utilities\EventAggregator.cs" />
+    <Compile Include="Utilities\ScrollingListBox.cs" />
+    <Compile Include="ViewModels\DiscoveredDeviceViewModel.cs" />
     <Compile Include="ViewModels\LogViewModel.cs" />
-    <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Models\SerialPortModel.cs" />
+    <Compile Include="Views\DiscoveredDeviceView.xaml.cs">
+      <DependentUpon>DiscoveredDeviceView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\LogView.xaml.cs">
       <DependentUpon>LogView.xaml</DependentUpon>
     </Compile>
-    <Page Include="Views\MainView.xaml">
+    <Compile Include="Views\LogWindow.xaml.cs">
+      <DependentUpon>LogWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\LogWindowView.xaml.cs">
+      <DependentUpon>LogWindowView.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Views\DiscoveredDeviceView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\LogView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\LogWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\MainWindowView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -74,18 +117,17 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Commands\DelegateCommand.cs" />
-    <Compile Include="Views\MainView.xaml.cs">
-      <DependentUpon>MainView.xaml</DependentUpon>
+    <Compile Include="Views\MainWindowView.xaml.cs">
+      <DependentUpon>MainWindowView.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Views\LogView.xaml">
+    <Page Include="Views\LogWindowView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Resources\PortCollection.cs" />
+    <Compile Include="Models\PortCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -103,6 +145,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -112,7 +155,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Windows\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

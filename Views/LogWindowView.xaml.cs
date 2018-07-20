@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,17 +11,16 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace BlueEyes.Views
 {
     /// <summary>
-    /// Interaction logic for LogView.xaml
+    /// Interaction logic for Window1.xaml
     /// </summary>
-    public partial class LogView : UserControl
+    public partial class LogWindowView : Window
     {
-        public LogView()
+        public LogWindowView()
         {
             InitializeComponent();
         }

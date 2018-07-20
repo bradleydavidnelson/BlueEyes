@@ -1,4 +1,4 @@
-﻿using BlueEyes.Resources;
+﻿using BlueEyes.Utilities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -18,7 +18,7 @@ namespace BlueEyes.Models
         #region Constructors
         public SerialPortModel()
         {
-            _sp = new SerialPort("COM1",115200,Parity.None,8,StopBits.One);
+            _sp = new SerialPort("COM1", 115200, Parity.None, 8, StopBits.One);
         }
         #endregion
 
@@ -110,6 +110,11 @@ namespace BlueEyes.Models
         {
             _sp.Open();
             NotifyPropertyChanged("IsOpen");
+        }
+
+        public SerialPort ToSerialPort()
+        {
+            return _sp;
         }
         #endregion
 
