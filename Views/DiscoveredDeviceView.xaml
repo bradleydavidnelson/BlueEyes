@@ -8,17 +8,17 @@
 
     <UserControl.Resources>
         <DataTemplate x:Key="discoveredDevicesTemplate">
-            <DockPanel DockPanel.Dock="Top">
+            <DockPanel DockPanel.Dock="Top" Margin="4,2">
                 <StackPanel Orientation="Vertical">
-                    <Label Content="{Binding Path=Name}" Margin="0,-6"/>
-                    <Label Content="{Binding Path=AddressString}" Margin="0,-6" FontSize="10" />
+                    <TextBlock Text="{Binding Path=Name}"/>
+                    <TextBlock Text="{Binding Path=AddressString}" FontSize="10" />
                 </StackPanel>
-                <Button DockPanel.Dock="Right" Content="{Binding Path=ConnectAction}" Width="80" HorizontalAlignment="Right"/>
+                <Button DockPanel.Dock="Right" Content="{Binding Path=ConnectAction}" Width="80" HorizontalAlignment="Right" Command="{Binding Path=ConnectCommand}"/>
             </DockPanel>
         </DataTemplate>
     </UserControl.Resources>
     
     <DockPanel>
-        <ListBox ItemsSource="{Binding DiscoveredDevices}" ItemTemplate="{StaticResource discoveredDevicesTemplate}"/>
+        <ItemsControl ItemsSource="{Binding DiscoveredDevices}" ItemTemplate="{StaticResource discoveredDevicesTemplate}"/>
     </DockPanel>
 </UserControl>

@@ -67,17 +67,34 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BlueGiga\BGLib.cs" />
+    <Compile Include="Bluetooth\UUIDs.cs" />
+    <Compile Include="MessageWriter.cs" />
     <Compile Include="Models\BLEPeripheralCollection.cs" />
+    <Compile Include="MvvmLight\Command\RelayCommand.cs" />
+    <Compile Include="MvvmLight\Command\RelayCommandGeneric.cs" />
+    <Compile Include="MvvmLight\Helpers\IExecuteWithObject.cs" />
+    <Compile Include="MvvmLight\Helpers\WeakAction.cs" />
+    <Compile Include="MvvmLight\Helpers\WeakActionGeneric.cs" />
+    <Compile Include="MvvmLight\Messaging\DialogMessage.cs" />
+    <Compile Include="MvvmLight\Messaging\GenericMessage.cs" />
+    <Compile Include="MvvmLight\Messaging\IMessenger.cs" />
+    <Compile Include="MvvmLight\Messaging\MessageBase.cs" />
+    <Compile Include="MvvmLight\Messaging\Messenger.cs" />
+    <Compile Include="MvvmLight\Messaging\NotificationMessage.cs" />
+    <Compile Include="MvvmLight\Messaging\NotificationMessageAction.cs" />
+    <Compile Include="MvvmLight\Messaging\NotificationMessageActionGeneric.cs" />
+    <Compile Include="MvvmLight\Messaging\NotificationMessageGeneric.cs" />
+    <Compile Include="MvvmLight\Messaging\NotificationMessageWithCallback.cs" />
+    <Compile Include="MvvmLight\Messaging\PropertyChangedMessage.cs" />
+    <Compile Include="MvvmLight\Messaging\PropertyChangedMessageBase.cs" />
     <Compile Include="Utilities\RelayCommand.cs" />
     <Compile Include="Converters\BoolInverterConverter.cs" />
     <Compile Include="Converters\BoolToValueConverter.cs" />
     <Compile Include="Models\BLEPeripheralModel.cs" />
-    <Compile Include="MvvmLight\EventToCommand.cs" />
-    <Compile Include="MvvmLight\IEventArgsConverter.cs" />
+    <Compile Include="MvvmLight\Command\EventToCommand.cs" />
+    <Compile Include="MvvmLight\Command\IEventArgsConverter.cs" />
     <Compile Include="Models\SerialNameModel.cs" />
-    <Compile Include="MvvmLight\RelayCommand.cs" />
-    <Compile Include="MvvmLight\WeakAction.cs" />
-    <Compile Include="MvvmLight\WeakFunc.cs" />
+    <Compile Include="MvvmLight\Helpers\WeakFunc.cs" />
     <Compile Include="Utilities\BindableBase.cs" />
     <Compile Include="Utilities\EventAggregator.cs" />
     <Compile Include="Utilities\ScrollingListBox.cs" />
@@ -93,9 +110,6 @@
     </Compile>
     <Compile Include="Views\LogWindow.xaml.cs">
       <DependentUpon>LogWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\LogWindowView.xaml.cs">
-      <DependentUpon>LogWindowView.xaml</DependentUpon>
     </Compile>
     <Page Include="Views\DiscoveredDeviceView.xaml">
       <SubType>Designer</SubType>
@@ -121,10 +135,6 @@
       <DependentUpon>MainWindowView.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Views\LogWindowView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\PortCollection.cs" />

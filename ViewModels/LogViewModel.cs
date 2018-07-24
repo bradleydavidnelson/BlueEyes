@@ -1,15 +1,10 @@
-﻿using BlueEyes.Utilities;
+﻿using GalaSoft.MvvmLight.Messaging;
+using BlueEyes.Utilities;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 
 namespace BlueEyes.ViewModels
@@ -17,17 +12,13 @@ namespace BlueEyes.ViewModels
     class LogViewModel : BindableBase
     {
         #region Fields
-        private RelayCommand<CancelEventArgs> _closingCommand;
         private ObservableCollection<TextBlock> _document = new ObservableCollection<TextBlock>();
-        private ICommand _hideCommand;
-        private ICommand _showCommand;
-        private bool _isVisible = false;
         #endregion
 
         #region Constructors
         public LogViewModel()
         {
-            
+            Messenger.Default.Register<GenericMessage<string>>(this,(action) => ReceiveMessage(action));
         }
         #endregion
 
@@ -42,86 +33,30 @@ namespace BlueEyes.ViewModels
                 
             }
         }
-
-        /*public RelayCommand<CancelEventArgs> ClosingCommand
-        {
-            get
-            {
-                if (_closingCommand == null)
-                {
-                    _closingCommand = new RelayCommand<CancelEventArgs>(Closing);
-                }
-                return _closingCommand;
-            }
-        }
-
-        public bool IsVisible
-        {
-            get { return _isVisible; }
-            set
-            {
-                _isVisible = value;
-                NotifyPropertyChanged();
-            }
-        }*/
         #endregion
 
         #region Methods
-        /*public void Closing(CancelEventArgs e)
+        private void ReceiveMessage(GenericMessage<string> message)
         {
-            // Hide instead of close
-            //e.Cancel = true;
-            //Hide(null);
-            Application.Current.Shutdown();
+            WriteLine(message.Content);
         }
 
-        public void Hide(object obj)
-        {
-            IsVisible = false;
-        }
-
-        public ICommand HideCommand
-        {
-            get
-            {
-                if (_hideCommand == null)
-                {
-                    _hideCommand = new RelayCommand(Hide, param => _isVisible);
-                }
-                return _hideCommand;
-            }
-            set { _hideCommand = value; }
-        }
-
-        public void Show(object obj)
-        {
-            IsVisible = true;
-        }
-
-        public ICommand ShowCommand
-        {
-            get
-            {
-                if (_showCommand == null)
-                {
-                    _showCommand = new RelayCommand(Show, param => !_isVisible);
-                }
-                return _showCommand;
-            }
-            set { _showCommand = value; }
-        }*/
-
-        public void WriteErrorLine(string s)
+        private void WriteErrorLine(string s)
         {
             WriteLineColors(s, Brushes.LightSalmon);
         }
 
-        public void WriteLine(string s)
+        private void WriteDebugLine(string s)
+        {
+            WriteLineColors(s, Brushes.LightGreen);
+        }
+
+        private void WriteLine(string s)
         {
             WriteLineColors(s, Brushes.White);
         }
 
-        public void WriteLine(string highlight, string normal)
+        private void WriteLine(string highlight, string normal)
         {
             WriteLineColors(highlight, Brushes.LightGoldenrodYellow, normal, Brushes.White);
         }

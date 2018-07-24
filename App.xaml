@@ -12,6 +12,7 @@
     <Application.Resources>
         <bg:BGLib x:Key="BGLib"/>
         <models:SerialPortCollection x:Key="SerialPorts"/>
+        <models:SerialPortModel x:Key="Port"/>
         <models:BLEPeripheralCollection x:Key="BLEPeripherals"/>
         <views:LogWindow x:Key="LogWindow"/>
         <properties:Settings x:Key="Settings"/>

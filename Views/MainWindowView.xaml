@@ -34,7 +34,7 @@
                 <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
             </MenuItem>
             <MenuItem Header="View">
-                <!--MenuItem Header="Log" Command="{Binding ViewLogCommand}" IsCheckable="True" IsChecked="{Binding LogIsVisible, Mode=OneWay}"/-->
+                <MenuItem Header="Log" Command="{Binding LogViewCommand}" IsCheckable="True" IsChecked="{Binding LogIsVisible, Mode=OneWay}"/>
             </MenuItem>
         </Menu>
         <ToolBarTray DockPanel.Dock="Top">
