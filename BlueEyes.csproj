@@ -98,10 +98,14 @@
     <Compile Include="Utilities\BindableBase.cs" />
     <Compile Include="Utilities\EventAggregator.cs" />
     <Compile Include="Utilities\ScrollingListBox.cs" />
+    <Compile Include="ViewModels\ConnectedDeviceViewModel.cs" />
     <Compile Include="ViewModels\DiscoveredDeviceViewModel.cs" />
     <Compile Include="ViewModels\LogViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Models\SerialPortModel.cs" />
+    <Compile Include="Views\ConnectedDeviceView.xaml.cs">
+      <DependentUpon>ConnectedDeviceView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\DiscoveredDeviceView.xaml.cs">
       <DependentUpon>DiscoveredDeviceView.xaml</DependentUpon>
     </Compile>
@@ -111,6 +115,10 @@
     <Compile Include="Views\LogWindow.xaml.cs">
       <DependentUpon>LogWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="Views\ConnectedDeviceView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\DiscoveredDeviceView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
