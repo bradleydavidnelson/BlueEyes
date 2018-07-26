@@ -13,7 +13,7 @@
                     <TextBlock Text="{Binding Path=Name}"/>
                     <TextBlock Text="{Binding Path=AddressString}" FontSize="10" />
                 </StackPanel>
-                <Button DockPanel.Dock="Right" Content="{Binding Path=ConnectAction}" Width="80" HorizontalAlignment="Right" Command="{Binding Path=ConnectCommand}"/>
+                <Button DockPanel.Dock="Right" Content="{Binding Path=ConnectAction}" Width="80" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Path=ConnectCommand}"/>
             </DockPanel>
         </DataTemplate>
     </UserControl.Resources>

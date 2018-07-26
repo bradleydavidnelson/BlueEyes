@@ -81,7 +81,6 @@ namespace BlueEyes.ViewModels
             block.Inlines.Add(run2);
 
             Document.Add(block);
-            
         }
         #endregion
     }

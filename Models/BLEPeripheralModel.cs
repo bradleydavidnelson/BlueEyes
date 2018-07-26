@@ -2,8 +2,13 @@
 using BlueEyes.ViewModels;
 using GalaSoft.MvvmLight.Messaging;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace BlueEyes.Models
 {
@@ -15,15 +20,33 @@ namespace BlueEyes.Models
         private Bluegiga.BGLib bglib = (Bluegiga.BGLib)Application.Current.FindResource("BGLib");
         private SerialPortModel port = (SerialPortModel)Application.Current.FindResource("Port");
 
+        private double _adc1;
         private byte[] _address;
         private byte _addrType;
         private byte _connection;
         private ConnState _connectionState = ConnState.Disconnected;
         private ICommand _connectCommand;
         private bool _isConnected;
+        private double _data;
+        private LPM _lowPowerMode = LPM.Unknown;
+        private ICommand _lpmCommand;
         private string _name;
+        private double _temperature;
+        private Stopwatch _uptime = new Stopwatch();
+        private DispatcherTimer _uptimeTimer = new DispatcherTimer();
+
+        // Attribute Database
+
+        // Easy handles TODO depreciate
+        public ushort attHandleData { get; set; }
+        public ushort attHandleLPM { get; set; }
+        public ushort attHandleCalibrate { get; set; }
+        public ushort attHandleTemp { get; set; }
+        public ushort attHandleRail { get; set; }
+        public Queue<ushort> attHandleCCC { get; set; } = new Queue<ushort>();
 
         public enum ConnState { Disconnected, Connecting, Connected };
+        public enum LPM { Unknown, Enabled, Disabled};
         #endregion
 
         #region Constructors
@@ -36,6 +59,12 @@ namespace BlueEyes.Models
         #endregion
 
         #region Properties
+        public double ADC1
+        {
+            get { return _adc1; }
+            set { SetProperty(ref _adc1, value); }
+        }
+
         public byte[] Address
         {
             get { return _address; }
@@ -58,7 +87,7 @@ namespace BlueEyes.Models
             get { return BitConverter.ToString(_address); }
         }
 
-        public bool AttributesFound { get; set; }
+        public bool ServiceIDsFound { get; set; }
 
         public string ConnectAction
         {
@@ -90,7 +119,14 @@ namespace BlueEyes.Models
 
         public byte Connection
         {
-            get { return _connection; }
+            get
+            {
+                if (!IsConnected)
+                {
+                    return (byte)0xFF;
+                }
+                return _connection;
+            }
             set { SetProperty(ref _connection, value); }
         }
 
@@ -114,9 +150,69 @@ namespace BlueEyes.Models
             }
         }
 
+        public double Data
+        {
+            get { return _data; }
+            set { SetProperty(ref _data, value); }
+        }
+
+        public long ElapsedMilliseconds
+        {
+            get
+            {
+                if (!_uptime.IsRunning)
+                {
+                    _uptime.Start();
+                }
+                return _uptime.ElapsedMilliseconds;
+            }
+        }
+
         public bool IsConnected
         {
             get { return _isConnected; }
+        }
+
+        public LPM LowPowerMode
+        {
+            get { return _lowPowerMode; }
+            set
+            {
+                SetProperty(ref _lowPowerMode, value);
+                NotifyPropertyChanged("LPMAction");
+            }
+        }
+
+        public string LPMAction
+        {
+            get
+            {
+                if (LowPowerMode == LPM.Enabled)
+                {
+                    return "Wake";
+                }
+                if (LowPowerMode == LPM.Disabled)
+                {
+                    return "Sleep";
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        }
+
+        public ICommand LPMCommand
+        {
+            get
+            {
+                if (_lpmCommand == null)
+                {
+                    _lpmCommand = new RelayCommand(SleepWake);
+                }
+                return _lpmCommand;
+            }
+            set { _lpmCommand = value; }
         }
 
         public string Name
@@ -124,9 +220,63 @@ namespace BlueEyes.Models
             get { return _name; }
             set { SetProperty(ref _name, value); }
         }
+
+        public Collection<Service> Services
+        {
+            get; set;
+        }
+
+        public double Temperature
+        {
+            get { return _temperature; }
+            set { SetProperty(ref _temperature, value); }
+        }
+
+        public string Uptime
+        {
+            get
+            {
+                if (!_uptime.IsRunning)
+                {
+                    _uptime.Start();
+                }
+                if (!_uptimeTimer.IsEnabled)
+                {
+                    _uptimeTimer.Start();
+                    _uptimeTimer.Interval = new TimeSpan(0, 0, 1);
+                    _uptimeTimer.Tick += timerNotify;
+                }
+
+                TimeSpan t = _uptime.Elapsed;
+                
+                if (t.Days > 0)
+                {
+                    return string.Format("{0}:{1}:{2:00}:{3:00}", t.Days, t.Hours, t.Minutes, t.Seconds);
+                }
+                else if (t.Hours > 0)
+                {
+                    return string.Format("{0}:{1:00}:{2:00}", t.Hours, t.Minutes, t.Seconds);
+                }
+                else
+                {
+                    return string.Format("{0}:{1:00}", t.Minutes, t.Seconds);
+                }
+            }
+        }
         #endregion
 
         #region Methods
+        private void CheckConnection(object sender, EventArgs e)
+        {
+            if (ConnectionState != ConnState.Connected)
+            {
+                MessageWriter.LogWrite("Connection failed");
+                ConnectionState = ConnState.Disconnected;
+            }
+
+            ((DispatcherTimer)sender).Stop();
+        }
+
         public void Connect()
         {
             // Connection parameters
@@ -152,6 +302,12 @@ namespace BlueEyes.Models
                 latency));
             bglib.SendCommand(port.ToSerialPort(), cmd);
 
+            // Initialize connecting timeout timer
+            DispatcherTimer connectionTimer = new DispatcherTimer();
+            connectionTimer.Tick += new EventHandler(CheckConnection);
+            connectionTimer.Interval = new TimeSpan(0, 0, 3);
+            connectionTimer.Start();
+
             ConnectionState = ConnState.Connecting;
         }
 
@@ -175,6 +331,48 @@ namespace BlueEyes.Models
             byte[] cmd = bglib.BLECommandConnectionDisconnect(Connection);
             MessageWriter.LogWrite(string.Format("ble_cmd_connection_disconnect: connection={0}", Connection));
             bglib.SendCommand(port.ToSerialPort(), cmd);
+        }
+
+        private void LPMEnter()
+        {
+            // Wake up
+            byte[] lpm_bit = new byte[] { 0x00 };
+            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, attHandleLPM, lpm_bit);
+            MessageWriter.LogWrite(string.Format("ble_cmd_att_client_attribute_write: connection={0}, handle={1}, data={2}",
+                Connection, attHandleLPM, BitConverter.ToString(lpm_bit)));
+            bglib.SendCommand(port.ToSerialPort(), cmd);
+        }
+
+        private void LPMExit()
+        {
+            // Wake up
+            byte[] lpm_bit = new byte[] { 0x01 };
+            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, attHandleLPM, lpm_bit);
+            MessageWriter.LogWrite(string.Format("ble_cmd_att_client_attribute_write: connection={0}, handle={1}, data={2}",
+                Connection, attHandleLPM, BitConverter.ToString(lpm_bit)));
+            bglib.SendCommand(port.ToSerialPort(), cmd);
+        }
+
+        private void SleepWake(object obj)
+        {
+            if (LowPowerMode == LPM.Disabled)
+            {
+                LPMEnter();
+            }
+            if (LowPowerMode == LPM.Enabled)
+            {
+                LPMExit();
+            }
+        }
+
+        private void timerNotify(object sender, EventArgs e)
+        {
+            NotifyPropertyChanged("Uptime");
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
         #endregion
     }

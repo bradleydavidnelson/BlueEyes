@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Specialized;
 
 namespace BlueEyes.Models
 {
@@ -11,5 +9,36 @@ namespace BlueEyes.Models
     {
         public BLEPeripheralCollection() : base()
         { }
+
+        public bool TryRemoveByConnection(byte connection, out BLEPeripheral target)
+        {
+            foreach (BLEPeripheral p in this)
+            {
+                if (p.Connection == connection)
+                {
+                    target = p;
+                    Remove(p);
+                    return true;
+                }
+            }
+
+            target = null;
+            return false;
+        }
+
+        public bool TryGetConnection(byte connection, out BLEPeripheral target)
+        {
+            foreach (BLEPeripheral p in this)
+            {
+                if (p.Connection == connection)
+                {
+                    target = p;
+                    return true;
+                }
+            }
+
+            target = null;
+            return false;
+        }
     }
 }

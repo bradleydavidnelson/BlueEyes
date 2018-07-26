@@ -67,9 +67,13 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BlueGiga\BGLib.cs" />
-    <Compile Include="Bluetooth\UUIDs.cs" />
+    <Compile Include="Bluetooth\UUID.cs" />
+    <Compile Include="Converters\ZeroToValueConverter.cs" />
     <Compile Include="MessageWriter.cs" />
+    <Compile Include="Models\AttributeModel.cs" />
     <Compile Include="Models\BLEPeripheralCollection.cs" />
+    <Compile Include="Models\CharacteristicModel.cs" />
+    <Compile Include="Models\ServiceModel.cs" />
     <Compile Include="MvvmLight\Command\RelayCommand.cs" />
     <Compile Include="MvvmLight\Command\RelayCommandGeneric.cs" />
     <Compile Include="MvvmLight\Helpers\IExecuteWithObject.cs" />

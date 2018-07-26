@@ -1,20 +1,13 @@
 ﻿using BlueEyes.Models;
 using BlueEyes.Utilities;
 using BlueEyes.Views;
-using GalaSoft.MvvmLight.Messaging;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace BlueEyes.ViewModels
 {
@@ -25,11 +18,12 @@ namespace BlueEyes.ViewModels
 
         // Application Resources
         private Bluegiga.BGLib bglib = (Bluegiga.BGLib)Application.Current.FindResource("BGLib");
-        private BLEPeripheralCollection discoveredDevices = (BLEPeripheralCollection)Application.Current.FindResource("BLEPeripherals");
+        private BLEPeripheralCollection discoveredDevices = (BLEPeripheralCollection)Application.Current.FindResource("DiscoveredPeripherals");
+        private BLEPeripheralCollection connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
         private SerialPortModel _port = (SerialPortModel)Application.Current.FindResource("Port");
         private LogWindow logWindow = (LogWindow)Application.Current.FindResource("LogWindow");
 
-        private ConcurrentDictionary<ushort, BLEPeripheral> connectedPeripherals = new ConcurrentDictionary<ushort, BLEPeripheral>();
+        private ConnectedDeviceViewModel _connectedDevicesVM = new ConnectedDeviceViewModel();
         private DiscoveredDeviceViewModel _discoveredDevicesVM = new DiscoveredDeviceViewModel();
         private LogViewModel _log = new LogViewModel();
         private SerialNameModel _selectedPort;
@@ -62,6 +56,12 @@ namespace BlueEyes.ViewModels
         #endregion
 
         #region Properties
+        public ConnectedDeviceViewModel ConnectedDevices
+        {
+            get { return _connectedDevicesVM; }
+            set { SetProperty(ref _connectedDevicesVM, value); }
+        }
+
         public DiscoveredDeviceViewModel DiscoveredDevices
         {
             get { return _discoveredDevicesVM; }
@@ -149,9 +149,14 @@ namespace BlueEyes.ViewModels
         #endregion
 
         #region BLE Event Handlers
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void BLEGAPScanResponseEvent(object sender, Bluegiga.BLE.Events.GAP.ScanResponseEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            Application.Current.Dispatcher.Invoke(delegate
             {
                 MessageWriter.LogWrite(string.Format("ble_evt_gap_scan_response: rssi={0}, packet_type={1}, sender={2}, address_type={3}, bond={4}, data={5}",
                     (SByte)e.rssi,
@@ -180,7 +185,7 @@ namespace BlueEyes.ViewModels
                     discoveredDevices.Add(responder);
                 }
 
-                // Right now, I only care about the name
+                // Identify device name
                 if (responder.Name == null)
                 {
                     byte[] remainingData = e.data;
@@ -202,9 +207,14 @@ namespace BlueEyes.ViewModels
             });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void BLEConnectionStatusEvent(object sender, Bluegiga.BLE.Events.Connection.StatusEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            Application.Current.Dispatcher.Invoke(delegate
             {
                 MessageWriter.LogWrite(string.Format("ble_evt_connection_status: connection={0}, flags={1}, address=[ {2}], address_type={3}, conn_interval={4}, timeout={5}, latency={6}, bonding={7}",
                     e.connection,
@@ -237,40 +247,47 @@ namespace BlueEyes.ViewModels
                 // Has a new connection been established?
                 if ((e.flags & 0x05) == 0x05)
                 {
-                    // Add to the connection dictionary
-                    connectedPeripherals.TryAdd(e.connection, source);
+                    // Add to collection
+                    if (!connectedDevices.Contains(source))
+                    {
+                        connectedDevices.Add(source);
+                    }
 
                     // The connection is established
                     source.ConnectionState = BLEPeripheral.ConnState.Connected;
                     MessageWriter.LogWrite("Connected to " + source.Name);
 
-                    // Perform service discovery
+                    // Find all attributes
                     ushort start = 0x0001;
                     ushort end = 0xFFFF;
-                    byte[] uuid = new byte[] { 0x00, 0x28 }; // "service" UUID is 0x2800 (little-endian for UUID uint8array)
-                    cmd = bglib.BLECommandATTClientReadByGroupType(e.connection, start, end, uuid);
-                    MessageWriter.LogWrite(string.Format("ble_cmd_att_client_read_by_group_type: connection={0}, start={1}, end={2}, uuid={3}",
+                    cmd = bglib.BLECommandATTClientFindInformation(e.connection, start, end);
+                    MessageWriter.LogWrite(string.Format("ble_cmd_att_client_find_information: connection={0}, start={1}, end={2}",
                         e.connection,
                         start,
-                        end,
-                        BitConverter.ToString(uuid)));
+                        end));
                     bglib.SendCommand(_port.ToSerialPort(), cmd);
                 }
             });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void BLEConnectionDisconnectedEvent(object sender, Bluegiga.BLE.Events.Connection.DisconnectedEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            Application.Current.Dispatcher.Invoke(delegate
             {
                 MessageWriter.LogWrite(string.Format("ble_evt_connection_disconnected: connection={0}, reason={1}",
                     e.connection,
                     e.reason));
 
-                BLEPeripheral source;
-
-                connectedPeripherals.TryRemove(e.connection, out source);
-                source.ConnectionState = BLEPeripheral.ConnState.Disconnected;
+                BLEPeripheral peripheral;
+                if (connectedDevices.TryRemoveByConnection(e.connection, out peripheral))
+                {
+                    peripheral.ConnectionState = BLEPeripheral.ConnState.Disconnected;
+                }
 
                 // Stop advertising
                 cmd = bglib.BLECommandGAPEndProcedure();
@@ -286,24 +303,76 @@ namespace BlueEyes.ViewModels
             });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void BLEATTClientFindInformationFoundEvent(object sender, Bluegiga.BLE.Events.ATTClient.FindInformationFoundEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            Application.Current.Dispatcher.Invoke(delegate
             {
                 MessageWriter.LogWrite(string.Format("ble_evt_attclient_find_information_found: connection={0}, chrhandle={1}, uuid={2}",
                     e.connection,
                     e.chrhandle,
                     BitConverter.ToString(e.uuid)));
 
-                BLEPeripheral peripheral = connectedPeripherals[e.connection];
+                BLEPeripheral peripheral;
+                if (!connectedDevices.TryGetConnection(e.connection, out peripheral))
+                {
+                    MessageWriter.LogWrite("Unable to find connection " + e.connection);
+                    return;
+                }
 
-                peripheral.AttributesFound = true;
+                if (Bluetooth.Parser.Lookup(e.uuid) != null)
+                {
+                    MessageWriter.LogWrite("This is " + Bluetooth.Parser.Lookup(e.uuid));
+                }
+
+                if (e.uuid.SequenceEqual(Bluetooth.Custom.Data))
+                {
+                    peripheral.attHandleData = e.chrhandle;
+                    MessageWriter.LogWrite("Data handle = " + e.chrhandle);
+                }
+
+                if (e.uuid.SequenceEqual(Bluetooth.Custom.LPM))
+                {
+                    peripheral.attHandleLPM = e.chrhandle;
+                    MessageWriter.LogWrite("LPM handle = " + e.chrhandle);
+                }
+
+                if (e.uuid.SequenceEqual(Bluetooth.Custom.Rheostat))
+                {
+                    peripheral.attHandleCalibrate = e.chrhandle;
+                    MessageWriter.LogWrite("Rheostat handle = " + e.chrhandle);
+                }
+
+                if (e.uuid.SequenceEqual(Bluetooth.Custom.Battery))
+                {
+                    peripheral.attHandleRail = e.chrhandle;
+                }
+
+                if (e.uuid.SequenceEqual(Bluetooth.Custom.Temperature))
+                {
+                    peripheral.attHandleTemp = e.chrhandle;
+                    MessageWriter.LogWrite("Temp handle = " + e.chrhandle);
+                }
+
+                else if (e.uuid.SequenceEqual(Bluetooth.Descriptors.ClientCharacteristicConfiguration))
+                {
+                    peripheral.attHandleCCC.Enqueue(e.chrhandle);
+                }
             });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void BLEATTClientGroupFoundEvent(object sender, Bluegiga.BLE.Events.ATTClient.GroupFoundEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            Application.Current.Dispatcher.Invoke(delegate
             {
                 MessageWriter.LogWrite(string.Format("ble_evt_att_client_group_found: connection={0}, start={1}, end={2}, uuid={3}",
                     e.connection,
@@ -311,45 +380,149 @@ namespace BlueEyes.ViewModels
                     e.end,
                     BitConverter.ToString(e.uuid)));
 
-                BLEPeripheral peripheral = connectedPeripherals[e.connection];
+                BLEPeripheral peripheral;
+                if (!connectedDevices.TryGetConnection(e.connection, out peripheral))
+                {
+                    MessageWriter.LogWrite("Unable to find connection " + e.connection);
+                    return;
+                }
+
+                peripheral.ServiceIDsFound = true;
             });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void BLEATTClientProcedureCompletedEvent(object sender, Bluegiga.BLE.Events.ATTClient.ProcedureCompletedEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            Application.Current.Dispatcher.Invoke(delegate
             {
                 MessageWriter.LogWrite(string.Format("ble_evt_attclient_procedure_completed: connection={0}, result={1}, chrhandle={2}",
                     e.connection,
                     e.result,
                     e.chrhandle));
 
-                BLEPeripheral peripheral = connectedPeripherals[e.connection];
-
-                if (!peripheral.AttributesFound)
+                BLEPeripheral peripheral;
+                if (!connectedDevices.TryGetConnection(e.connection, out peripheral))
                 {
-                    // Find all attributes
+                    MessageWriter.LogWrite("Unable to find connection " + e.connection);
+                    return;
+                }
+
+                // Have attributes been found?
+                if (!peripheral.ServiceIDsFound)
+                {
+                    // Perform service discovery
                     ushort start = 0x0001;
                     ushort end = 0xFFFF;
-                    cmd = bglib.BLECommandATTClientFindInformation(e.connection, start, end);
-                    MessageWriter.LogWrite(string.Format("ble_cmd_att_client_find_information: connection={0}, start={1}, end={2}",
+                    byte[] uuid = new byte[] { 0x00, 0x28 }; // "service" UUID is 0x2800 (little-endian for UUID uint8array)
+                    cmd = bglib.BLECommandATTClientReadByGroupType(e.connection, start, end, uuid);
+                    MessageWriter.LogWrite(string.Format("ble_cmd_att_client_read_by_group_type: connection={0}, start={1}, end={2}, uuid={3}",
                         e.connection,
                         start,
-                        end));
+                        end,
+                        BitConverter.ToString(uuid)));
+                    bglib.SendCommand(_port.ToSerialPort(), cmd);
+                }
+
+                if (peripheral.attHandleCCC.Count > 0)
+                {
+                    // Enable indications
+                    byte[] indications = new byte[] { 0x03 };
+                    Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(e.connection, peripheral.attHandleCCC.Peek(), indications);
+                    MessageWriter.LogWrite(String.Format("ble_cmd_att_client_attribute_write: connection={0}, att_handle={1}, data={2}",
+                        e.connection, peripheral.attHandleCCC.Dequeue(), BitConverter.ToString(indications)));
+                    bglib.SendCommand(_port.ToSerialPort(), cmd);
+                }
+
+                // Is the low power mode state known?
+                else if (peripheral.attHandleLPM > 0 && (peripheral.LowPowerMode == BLEPeripheral.LPM.Unknown || e.chrhandle == peripheral.attHandleLPM))
+                {
+                    // Check sleep mode
+                    cmd = bglib.BLECommandATTClientReadByHandle(e.connection, peripheral.attHandleLPM);
+                    MessageWriter.LogWrite(string.Format("ble_cmd_att_client_read_by_handle: connection={0}, handle={1}",
+                        e.connection, peripheral.attHandleLPM));
                     bglib.SendCommand(_port.ToSerialPort(), cmd);
                 }
             });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         public void BLEATTClientAttributeValueEvent(object sender, Bluegiga.BLE.Events.ATTClient.AttributeValueEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke((Action)delegate
+            Application.Current.Dispatcher.Invoke(delegate
             {
                 MessageWriter.LogWrite(string.Format("ble_evt_attclient_attribute_value: connection={0}, atthandle={1}, type={2}, value={3}",
                     e.connection,
                     e.atthandle,
                     e.type,
                     BitConverter.ToString(e.value)));
+
+                BLEPeripheral peripheral;
+                if (!connectedDevices.TryGetConnection(e.connection, out peripheral))
+                {
+                    MessageWriter.LogWrite("Unable to find connection " + e.connection);
+                    return;
+                }
+
+                // DATA PACKET
+                if (e.atthandle == peripheral.attHandleData)
+                {
+                    int length = e.value.Length / 2;
+
+                    // Decode packet
+                    // The following decodes each pair of bytes into a single data point
+                    double[] val = new double[length];
+                    for (int i = 0; i < length; i++)
+                    {
+                        short raw = BitConverter.ToInt16(e.value, 2 * i);
+                        val[i] = raw * 2500 / 2047;
+                    }
+
+                    peripheral.Data = val.Average();
+                }
+
+                // Battery
+                if (e.atthandle == peripheral.attHandleRail)
+                {
+                    if (e.value.Length == 2)
+                    {
+                        // Get data
+                        short data = BitConverter.ToInt16(e.value, 0);
+
+                        // Calculate rail
+                        peripheral.ADC1 = data * 2500 / 2047;
+                    }
+                }
+
+                // TEMPERATURE PACKET
+                if (e.atthandle == peripheral.attHandleTemp)
+                {
+                    short value = BitConverter.ToInt16(e.value, 0);
+
+                    peripheral.Temperature = (value * 2500 / 2047) * 10 / 45 - 169; // Not really characterized, but it should be close
+                }
+
+                // Low Power Mode
+                if (e.atthandle == peripheral.attHandleLPM)
+                {
+                    // Sleep bit
+                    if ((e.value[0] & 0x01) == 0x00) // Device is asleep
+                    {
+                        peripheral.LowPowerMode = BLEPeripheral.LPM.Enabled;
+                    }
+                    else // Device is awake
+                    {
+                        peripheral.LowPowerMode = BLEPeripheral.LPM.Disabled;
+                    }
+                }
             });
         }
         #endregion
@@ -431,6 +604,8 @@ namespace BlueEyes.ViewModels
                 _port.Close();
                 NotifyPropertyChanged("Port_IsOpen");
                 MessageWriter.LogWrite(_selectedPort.PortName + " closed");
+
+                discoveredDevices.Clear();
             }
             else // Is Closed
             {

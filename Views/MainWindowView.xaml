@@ -14,6 +14,9 @@
         <DataTemplate DataType="{x:Type viewModels:LogViewModel}">
             <views:LogView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:ConnectedDeviceViewModel}">
+            <views:ConnectedDeviceView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:DiscoveredDeviceViewModel}">
             <views:DiscoveredDeviceView/>
         </DataTemplate>
@@ -58,7 +61,7 @@
 
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
 
-            <!--ContentControl Grid.Column="2" Content="{Binding Log}" /-->
+            <ContentControl Grid.Column="2" Content="{Binding ConnectedDevices}" />
         </Grid>
     </DockPanel>
 </Window>

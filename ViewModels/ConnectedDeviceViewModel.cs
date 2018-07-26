@@ -1,10 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using BlueEyes.Models;
+using System.Windows;
 
 namespace BlueEyes.ViewModels
 {
-    // I don't know yet...
+    class ConnectedDeviceViewModel
+    {
+        private BLEPeripheralCollection _connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
+
+        public BLEPeripheralCollection ConnectedDevices
+        {
+            get { return _connectedDevices; }
+            set { _connectedDevices = value; }
+        }
+    }
 }
