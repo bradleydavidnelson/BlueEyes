@@ -2,27 +2,35 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+             xmlns:command="clr-namespace:GalaSoft.MvvmLight.Command"
              xmlns:local="clr-namespace:BlueEyes.Views"
+             xmlns:conv="clr-namespace:BlueEyes.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="VisibilityConverter" FalseValue="Hidden" TrueValue="Visible"/>
+    </UserControl.Resources>
     
     <StackPanel Orientation="Vertical">
-        <ComboBox ItemsSource="{Binding Source={StaticResource ConnectedPeripherals}}"
-                  SelectedItem="{Binding Path=SelectedPeripheral}"
-                  SelectedIndex="0"/>
-        <StackPanel Orientation="Horizontal" Margin="0,20" HorizontalAlignment="Center" Height="24">
+        <ComboBox SelectedIndex="0" Margin="0,0,0,20"
+                  SelectedItem="{Binding SelectedPeripheral, Mode=TwoWay}"
+                  ItemsSource="{Binding Source={StaticResource ConnectedPeripherals}}"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <TextBlock Text="Value:"/>
-            <TextBox Width="80">
-                <TextBox.InputBindings>
-                    <KeyBinding Command="{Binding SendValueCommand}" Key="Return" />
-                </TextBox.InputBindings>
-            </TextBox>
-            <StackPanel Orientation="Vertical">
-                <Button Content="▲" FontSize="6"/>
-                <Button Content="▼" FontSize="6"/>
-            </StackPanel>
+            <TextBox Text="{Binding Path=RheostatValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="60"/>
         </StackPanel>
-        <Button Content="Finish" HorizontalAlignment="Center" Height="24" Padding="10,2"/>
+        <Slider Value="{Binding Path=RheostatValue, Mode=TwoWay}" Maximum="{Binding Path=RheostatMax}">
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="ValueChanged">
+                    <command:EventToCommand Command="{Binding SliderDelayCommand}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </Slider>
+        <Button Content="Save Value" HorizontalAlignment="Center" Height="24" Margin="0,20" Padding="10,2"
+                Visibility="{Binding HasSaveCharacteristic, Converter={StaticResource VisibilityConverter}}"
+                Command="{Binding SaveValueCommand}"/>
     </StackPanel>
 </UserControl>

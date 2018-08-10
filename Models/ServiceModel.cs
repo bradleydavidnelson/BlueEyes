@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -7,28 +8,30 @@ using System.Threading.Tasks;
 
 namespace BlueEyes.Models
 {
-    public class Service : Attribute
+    public class Service : AttributeGroup
     {
-        private Collection<Attribute> _attributes = new Collection<Attribute>();
-        private Collection<Characteristic> _characteristics = new Collection<Characteristic>();
-        private byte[] _groupUuid = new byte[] { };
+        private ConcurrentDictionary<string,Characteristic> _characteristics = new ConcurrentDictionary<string,Characteristic>();
+        private byte[] _groupUuid;
 
-        public Collection<Attribute> Attributes
-        {
-            get { return _attributes; }
-            set { _attributes = value; }
-        }
-
-        public Collection<Characteristic> Characteristics
+        #region Properties
+        public ConcurrentDictionary<string, Characteristic> Characteristics
         {
             get { return _characteristics; }
-            set { _characteristics = value; }
+            set { SetProperty(ref _characteristics, value); }
         }
 
         public byte[] GroupUUID
         {
             get { return _groupUuid; }
-            set { _groupUuid = value; }
+            set { SetProperty(ref _groupUuid, value); }
         }
+        #endregion
+
+        #region Methods
+        public List<Characteristic> GetCharacteristics()
+        {
+            return _characteristics.Values.OrderBy(o => o.Handle).ToList();
+        }
+        #endregion
     }
 }

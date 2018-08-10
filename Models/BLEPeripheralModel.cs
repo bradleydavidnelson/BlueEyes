@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -17,9 +18,17 @@ namespace BlueEyes.Models
     public class BLEPeripheral : BindableBase
     {
         #region Fields
+        // Global
         private Bluegiga.BGLib bglib = (Bluegiga.BGLib)Application.Current.FindResource("BGLib");
         private SerialPortModel port = (SerialPortModel)Application.Current.FindResource("Port");
 
+        // Collections
+        private ConcurrentDictionary<ushort,Attribute> _attributes = new ConcurrentDictionary<ushort,Attribute>();
+        private ConcurrentDictionary<string,Service> _services = new ConcurrentDictionary<string,Service>();
+        private ConcurrentDictionary<string,Characteristic> _characteristics = new ConcurrentDictionary<string,Characteristic>();
+        public DynamicDictionary Serv = new DynamicDictionary();
+
+        // misc
         private double _adc1;
         private byte[] _address;
         private byte _addrType;
@@ -31,11 +40,10 @@ namespace BlueEyes.Models
         private LPM _lowPowerMode = LPM.Unknown;
         private ICommand _lpmCommand;
         private string _name;
+        private string _saveFile;
         private double _temperature;
         private Stopwatch _uptime = new Stopwatch();
-        private DispatcherTimer _uptimeTimer = new DispatcherTimer();
-
-        // Attribute Database
+        private DispatcherTimer _uptimeDispatcher = new DispatcherTimer();
 
         // Easy handles TODO depreciate
         public ushort attHandleData { get; set; }
@@ -55,6 +63,9 @@ namespace BlueEyes.Models
             _address = address;
             NotifyPropertyChanged("Address");
             NotifyPropertyChanged("AddressString");
+
+            _uptimeDispatcher.Interval = new TimeSpan(0, 0, 1);
+            _uptimeDispatcher.Tick += timerNotify;
         }
         #endregion
 
@@ -70,8 +81,7 @@ namespace BlueEyes.Models
             get { return _address; }
             set
             {
-                _address = value;
-                NotifyPropertyChanged();
+                SetProperty(ref _address, value);
                 NotifyPropertyChanged("AddressString");
             }
         }
@@ -87,7 +97,17 @@ namespace BlueEyes.Models
             get { return BitConverter.ToString(_address); }
         }
 
-        public bool ServiceIDsFound { get; set; }
+        public ConcurrentDictionary<ushort,Attribute> Attributes
+        {
+            get { return _attributes; }
+            private set { SetProperty(ref _attributes, value); }
+        }
+
+        public ConcurrentDictionary<string,Characteristic> Characteristics
+        {
+            get { return _characteristics; }
+            set { SetProperty(ref _characteristics, value); }
+        }
 
         public string ConnectAction
         {
@@ -127,7 +147,11 @@ namespace BlueEyes.Models
                 }
                 return _connection;
             }
-            set { SetProperty(ref _connection, value); }
+            set
+            {
+                SetProperty(ref _connection, value);
+                LowPowerMode = LPM.Unknown; // LPM may have changed
+            }
         }
 
         public ConnState ConnectionState
@@ -221,9 +245,23 @@ namespace BlueEyes.Models
             set { SetProperty(ref _name, value); }
         }
 
-        public Collection<Service> Services
+        public string SaveFile
         {
-            get; set;
+            get
+            {
+                if (_saveFile == null)
+                {
+                    _saveFile = Properties.Settings.Default.SaveLocation + "\\" + Name + "_" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + DateTime.Now.Hour + DateTime.Now.Minute + DateTime.Now.Second +".csv";
+                }
+                return _saveFile;
+            }
+            private set { _saveFile = value; }
+        }
+
+        public ConcurrentDictionary<string,Service> Services
+        {
+            get { return _services; }
+            set { SetProperty(ref _services, value); }
         }
 
         public double Temperature
@@ -235,37 +273,63 @@ namespace BlueEyes.Models
         public string Uptime
         {
             get
-            {
-                if (!_uptime.IsRunning)
-                {
-                    _uptime.Start();
-                }
-                if (!_uptimeTimer.IsEnabled)
-                {
-                    _uptimeTimer.Start();
-                    _uptimeTimer.Interval = new TimeSpan(0, 0, 1);
-                    _uptimeTimer.Tick += timerNotify;
-                }
+            { 
+                TimeSpan uptime = _uptime.Elapsed;
 
-                TimeSpan t = _uptime.Elapsed;
-                
-                if (t.Days > 0)
+                if (uptime.Days > 0)
                 {
-                    return string.Format("{0}:{1}:{2:00}:{3:00}", t.Days, t.Hours, t.Minutes, t.Seconds);
+                    return string.Format("{0}:{1}:{2:00}:{3:00}", uptime.Days, uptime.Hours, uptime.Minutes, uptime.Seconds);
                 }
-                else if (t.Hours > 0)
+                else if (uptime.Hours > 0)
                 {
-                    return string.Format("{0}:{1:00}:{2:00}", t.Hours, t.Minutes, t.Seconds);
+                    return string.Format("{0}:{1:00}:{2:00}", uptime.Hours, uptime.Minutes, uptime.Seconds);
                 }
                 else
                 {
-                    return string.Format("{0}:{1:00}", t.Minutes, t.Seconds);
+                    return string.Format("{0}:{1:00}", uptime.Minutes, uptime.Seconds);
                 }
             }
+        }
+
+        public long UptimeMilliseconds
+        {
+            get { return _uptime.ElapsedMilliseconds; }
         }
         #endregion
 
         #region Methods
+        public void AddNewAttribute(ushort handle, byte[] uuid)
+        {
+            Attribute attr = new Attribute();
+            attr.Handle = handle;
+            attr.UUID = uuid;
+            attr.Description = Bluetooth.Parser.Lookup(uuid);
+            Attributes.TryAdd(handle, attr);
+        }
+
+        public bool TryAddService(Service s)
+        {
+            return Services.TryAdd(s.Description, s);
+        }
+
+        public void AddNewService(ushort start, ushort end, byte[] uuid)
+        {
+            Service s = new Service();
+            s.Handle = start;
+            s.UUID = uuid;
+            s.Description = Bluetooth.Parser.Lookup(uuid);
+            if (s.Description != null)
+            {
+                Services.TryAdd(s.Description, s);
+            }
+            else
+            {
+                Services.TryAdd(BitConverter.ToString(s.UUID), s);
+            }
+
+            PopulateService(s);
+        }
+
         private void CheckConnection(object sender, EventArgs e)
         {
             if (ConnectionState != ConnState.Connected)
@@ -293,7 +357,7 @@ namespace BlueEyes.Models
                 (ushort)(conn_interval_max / 1.25F),
                 (ushort)(timeout / 10F),
                 latency); // 125ms interval, 125ms window, active scanning
-            MessageWriter.LogWrite(string.Format("ble_cmd_gap_connect_direct: adress={0}, address_type={1}, conn_interval_min={2}; conn_interval_max={3}, timeout={4}, latency={5}",
+            MessageWriter.LogWrite("ble_cmd_gap_connect_direct: ", string.Format("address={0}, address_type={1}, conn_interval_min={2}; conn_interval_max={3}, timeout={4}, latency={5}",
                 BitConverter.ToString(Address),
                 AddressType,
                 conn_interval_min,
@@ -325,12 +389,21 @@ namespace BlueEyes.Models
 
         public void Disconnect()
         {
-            // TODO: enter LPM before disconnecting
+            if (LowPowerMode == LPM.Disabled)
+            {
+                MessageWriter.LogWrite(Name + " entering LPM...");
+                LPMEnter();
+            }
 
             // Disconnect
             byte[] cmd = bglib.BLECommandConnectionDisconnect(Connection);
-            MessageWriter.LogWrite(string.Format("ble_cmd_connection_disconnect: connection={0}", Connection));
+            MessageWriter.LogWrite("ble_cmd_connection_disconnect: ", string.Format("connection={0}", Connection));
             bglib.SendCommand(port.ToSerialPort(), cmd);
+        }
+
+        public List<Service> GetServices()
+        {
+            return _services.Values.OrderBy(o => o.Handle).ToList();
         }
 
         private void LPMEnter()
@@ -338,9 +411,20 @@ namespace BlueEyes.Models
             // Wake up
             byte[] lpm_bit = new byte[] { 0x00 };
             Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, attHandleLPM, lpm_bit);
-            MessageWriter.LogWrite(string.Format("ble_cmd_att_client_attribute_write: connection={0}, handle={1}, data={2}",
+            MessageWriter.LogWrite("ble_cmd_att_client_attribute_write: ", string.Format("connection={0}, handle={1}, data={2}",
                 Connection, attHandleLPM, BitConverter.ToString(lpm_bit)));
             bglib.SendCommand(port.ToSerialPort(), cmd);
+
+            // Stop tracking uptime
+            _uptimeDispatcher.IsEnabled = false;
+            if (_uptime.IsRunning == true)
+            {
+                _uptime.Reset();
+                NotifyPropertyChanged("Uptime");
+            }
+
+            // New save file
+            SaveFile = null;
         }
 
         private void LPMExit()
@@ -348,9 +432,60 @@ namespace BlueEyes.Models
             // Wake up
             byte[] lpm_bit = new byte[] { 0x01 };
             Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, attHandleLPM, lpm_bit);
-            MessageWriter.LogWrite(string.Format("ble_cmd_att_client_attribute_write: connection={0}, handle={1}, data={2}",
+            MessageWriter.LogWrite("ble_cmd_att_client_attribute_write: ", string.Format("connection={0}, handle={1}, data={2}",
                 Connection, attHandleLPM, BitConverter.ToString(lpm_bit)));
             bglib.SendCommand(port.ToSerialPort(), cmd);
+
+            // Track uptime
+            _uptimeDispatcher.IsEnabled = true;
+            if (_uptime.IsRunning == false)
+            {
+                _uptime.Start();
+            }
+        }
+
+        public void PopulateService(Service s)
+        {
+            Stack<Characteristic> chrstack = new Stack<Characteristic>();
+
+            foreach (Attribute a in Attributes.Values)
+            {
+                if (a.Handle > s.Handle && a.Handle <= s.GroupEnd)
+                {
+                    // New characteristic declaration
+                    if (a.UUID.SequenceEqual(Bluetooth.Declarations.Characteristic))
+                    {
+                        Characteristic chr = new Characteristic();
+                        chr.Handle = a.Handle;
+                        chr.UUID = a.UUID;
+                        chr.ValueAttribute = Attributes[(ushort)(chr.Handle + 1)];
+                        chr.Declaration = Attributes[a.Handle];
+                        chr.Description = chr.ValueAttribute.Description;
+                        if (chr.Description != null)
+                        {
+                            s.Characteristics.TryAdd(chr.Description, chr);
+                            Characteristics.TryAdd(chr.Description, chr);
+                        }
+                        else
+                        {
+                            s.Characteristics.TryAdd(BitConverter.ToString(chr.UUID), chr);
+                            Characteristics.TryAdd(BitConverter.ToString(chr.UUID), chr);
+                        }
+                        chrstack.Push(chr);
+                    }
+                    else
+                    {
+                        if (a.Description != null)
+                        {
+                            chrstack.Peek().Descriptors.TryAdd(a.Description, a);
+                        }
+                        else
+                        {
+                            chrstack.Peek().Descriptors.TryAdd(BitConverter.ToString(a.UUID), a);
+                        }
+                    }
+                }
+            }
         }
 
         private void SleepWake(object obj)

@@ -9,17 +9,16 @@ using System.Windows.Media;
 
 namespace BlueEyes.ViewModels
 {
-    class LogViewModel : BindableBase
+    class LogListViewModel : BindableBase
     {
         #region Fields
         private ObservableCollection<TextBlock> _document = new ObservableCollection<TextBlock>();
         #endregion
 
         #region Constructors
-        public LogViewModel()
+        public LogListViewModel()
         {
             Messenger.Default.Register<GenericMessage<string>>(this,(action) => ReceiveMessage(action));
-            Messenger.Default.Register<GenericMessage<string[]>>(this, (action) => ReceiveMessage(action));
         }
         #endregion
 
@@ -27,7 +26,12 @@ namespace BlueEyes.ViewModels
         public ObservableCollection<TextBlock> Document
         {
             get { return _document; }
-            set { SetProperty(ref _document, value); }
+            set
+            {
+                _document = value;
+                NotifyPropertyChanged();
+                
+            }
         }
         #endregion
 
@@ -35,18 +39,6 @@ namespace BlueEyes.ViewModels
         private void ReceiveMessage(GenericMessage<string> message)
         {
             WriteLine(message.Content);
-        }
-
-        private void ReceiveMessage(GenericMessage<string[]> message)
-        {
-            if (message.Content.Length == 2)
-            {
-                WriteLine(message.Content[0],message.Content[1]);
-            }
-            if (message.Content.Length == 3)
-            {
-                WriteDebugLine(message.Content[0]);
-            }
         }
 
         private void WriteErrorLine(string s)

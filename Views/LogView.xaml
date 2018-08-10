@@ -9,6 +9,8 @@
              d:DesignHeight="300" d:DesignWidth="300">
 
     <Grid>
-        <utilities:ScrollingListBox Background="Black" ItemsSource="{Binding Document}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+        <ScrollViewer x:Name="scrollViewer" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl Background="Black" ItemsSource="{Binding Document, NotifyOnTargetUpdated=True, Mode=TwoWay}" TargetUpdated="ItemsControl_SourceUpdated"/><!--TODO this doesn't work after you scroll-->
+        </ScrollViewer>
     </Grid>
 </UserControl>

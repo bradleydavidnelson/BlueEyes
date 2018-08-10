@@ -10,25 +10,18 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace BlueEyes.Views
 {
     /// <summary>
-    /// Interaction logic for LogView.xaml
+    /// Interaction logic for CalibrationWindow.xaml
     /// </summary>
-    public partial class LogView : UserControl
+    public partial class CalibrationWindow : Window
     {
-        public LogView()
+        public CalibrationWindow()
         {
             InitializeComponent();
-        }
-
-        private void ItemsControl_SourceUpdated(object sender, DataTransferEventArgs e)
-        {
-            Console.WriteLine("Hello");
-            scrollViewer.ScrollToBottom();
         }
     }
 }

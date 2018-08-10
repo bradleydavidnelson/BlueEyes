@@ -32,12 +32,16 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top" VerticalAlignment="Top" BorderThickness="0">
             <MenuItem Header="File">
-                <MenuItem Header="Set Save Location..."/>
+                <MenuItem Header="Set Save Location..." Command="{Binding SetSaveLocationCommand}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
             </MenuItem>
             <MenuItem Header="View">
                 <MenuItem Header="Log" Command="{Binding LogViewCommand}" IsCheckable="True" IsChecked="{Binding LogIsVisible, Mode=OneWay}"/>
+            </MenuItem>
+            <MenuItem Header="Sensor">
+                <MenuItem Header="GATT..." Command="{Binding GetGATTCommand}"/>
+                <MenuItem Header="Calibrate..." Command="{Binding OpenCalibrationWindowCommand}"/>
             </MenuItem>
         </Menu>
         <ToolBarTray DockPanel.Dock="Top">

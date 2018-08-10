@@ -68,8 +68,10 @@
     </ApplicationDefinition>
     <Compile Include="BlueGiga\BGLib.cs" />
     <Compile Include="Bluetooth\UUID.cs" />
+    <Compile Include="Utilities\ConcurrentDictionary.cs" />
     <Compile Include="Converters\ZeroToValueConverter.cs" />
-    <Compile Include="MessageWriter.cs" />
+    <Compile Include="Utilities\MessageWriter.cs" />
+    <Compile Include="Models\AttributeGroupModel.cs" />
     <Compile Include="Models\AttributeModel.cs" />
     <Compile Include="Models\BLEPeripheralCollection.cs" />
     <Compile Include="Models\CharacteristicModel.cs" />
@@ -103,13 +105,18 @@
     <Compile Include="Utilities\EventAggregator.cs" />
     <Compile Include="Utilities\ScrollingListBox.cs" />
     <Compile Include="ViewModels\CalibrateRheostatViewModel.cs" />
+    <Compile Include="ViewModels\CalibrationWindowViewModel.cs" />
     <Compile Include="ViewModels\ConnectedDeviceViewModel.cs" />
     <Compile Include="ViewModels\DiscoveredDeviceViewModel.cs" />
+    <Compile Include="ViewModels\LogListViewModel.cs" />
     <Compile Include="ViewModels\LogViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Models\SerialPortModel.cs" />
     <Compile Include="Views\CalibrateRheostatView.xaml.cs">
       <DependentUpon>CalibrateRheostatView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\CalibrationWindow.xaml.cs">
+      <DependentUpon>CalibrationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ConnectedDeviceView.xaml.cs">
       <DependentUpon>ConnectedDeviceView.xaml</DependentUpon>
@@ -124,6 +131,10 @@
       <DependentUpon>LogWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="Views\CalibrateRheostatView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\CalibrationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

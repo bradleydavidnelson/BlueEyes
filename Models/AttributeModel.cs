@@ -1,10 +1,12 @@
-﻿namespace BlueEyes.Models
+﻿using BlueEyes.Utilities;
+
+namespace BlueEyes.Models
 {
-    public class Attribute
+    public class Attribute : BindableBase
     {
         private string _description = null;
-        private ushort handle;
-        private byte[] uuid = new byte[] { };
+        private ushort _handle;
+        private byte[] _uuid = new byte[] { };
 
         public Attribute()
         { }
@@ -12,19 +14,19 @@
         public string Description
         {
             get { return _description; }
-            set { _description = value; }
+            set { SetProperty(ref _description, value); }
         }
 
         public ushort Handle
         {
-            get { return handle; }
-            set { handle = value; }
+            get { return _handle; }
+            set { SetProperty(ref _handle, value); }
         }
 
         public byte[] UUID
         {
-            get { return uuid; }
-            set { uuid = value; }
+            get { return _uuid; }
+            set { SetProperty(ref _uuid, value); }
         }
 
         public override string ToString()
