@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{F32E0E34-CEC4-45DD-B3A6-797324CF807D}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BlueEyes</RootNamespace>
     <AssemblyName>BlueEyes</AssemblyName>
@@ -33,6 +33,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Expression.Interactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -68,6 +71,9 @@
     </ApplicationDefinition>
     <Compile Include="BlueGiga\BGLib.cs" />
     <Compile Include="Bluetooth\UUID.cs" />
+    <Compile Include="BindableSerialPort.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Utilities\ConcurrentDictionary.cs" />
     <Compile Include="Converters\ZeroToValueConverter.cs" />
     <Compile Include="Utilities\MessageWriter.cs" />
@@ -109,9 +115,12 @@
     <Compile Include="ViewModels\ConnectedDeviceViewModel.cs" />
     <Compile Include="ViewModels\DiscoveredDeviceViewModel.cs" />
     <Compile Include="ViewModels\LogListViewModel.cs" />
-    <Compile Include="ViewModels\LogViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
-    <Compile Include="Models\SerialPortModel.cs" />
+    <Compile Include="Views\PeripheralSummaryView.xaml.cs">
+      <DependentUpon>PeripheralSummaryView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\PeripheralSummaryViewModel.cs" />
+    <Compile Include="ViewModels\SensorWindowViewModel.cs" />
     <Compile Include="Views\CalibrateRheostatView.xaml.cs">
       <DependentUpon>CalibrateRheostatView.xaml</DependentUpon>
     </Compile>
@@ -124,12 +133,13 @@
     <Compile Include="Views\DiscoveredDeviceView.xaml.cs">
       <DependentUpon>DiscoveredDeviceView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\LogView.xaml.cs">
-      <DependentUpon>LogView.xaml</DependentUpon>
+    <Compile Include="Views\SensorWindowView.xaml.cs">
+      <DependentUpon>SensorWindowView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\LogWindow.xaml.cs">
-      <DependentUpon>LogWindow.xaml</DependentUpon>
-    </Compile>
+    <Page Include="Views\PeripheralSummaryView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\CalibrateRheostatView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -146,14 +156,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\LogView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\LogWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Views\MainWindowView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -166,6 +168,10 @@
       <DependentUpon>MainWindowView.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\SensorWindowView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\PortCollection.cs" />

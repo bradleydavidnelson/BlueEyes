@@ -15,11 +15,11 @@ using System.Windows.Shapes;
 namespace BlueEyes.Views
 {
     /// <summary>
-    /// Interaction logic for LogWindow.xaml
+    /// Interaction logic for SensorWindowView.xaml
     /// </summary>
-    public partial class LogWindow : Window
+    public partial class SensorWindowView : Window
     {
-        public LogWindow()
+        public SensorWindowView()
         {
             InitializeComponent();
         }

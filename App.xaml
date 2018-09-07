@@ -11,11 +11,10 @@
     
     <Application.Resources>
         <bg:BGLib x:Key="BGLib"/>
-        <models:SerialPortCollection x:Key="SerialPorts"/>
-        <models:SerialPortModel x:Key="Port"/>
+        <models:SerialPortCollection x:Key="SerialPortList"/>
+        <local:BindableSerialPort x:Key="SelectedPort"/>
         <models:BLEPeripheralCollection x:Key="DiscoveredPeripherals"/>
         <models:BLEPeripheralCollection x:Key="ConnectedPeripherals"/>
-        <views:LogWindow x:Key="LogWindow"/>
         <properties:Settings x:Key="Settings"/>
     </Application.Resources>
 </Application>

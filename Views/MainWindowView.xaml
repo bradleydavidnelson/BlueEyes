@@ -11,9 +11,6 @@
         Title="Blue Eyes Interface" Height="350" Width="600">
 
     <Window.Resources>
-        <DataTemplate DataType="{x:Type viewModels:LogViewModel}">
-            <views:LogView/>
-        </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:ConnectedDeviceViewModel}">
             <views:ConnectedDeviceView/>
         </DataTemplate>
@@ -36,10 +33,14 @@
                 <Separator/>
                 <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
             </MenuItem>
+            <MenuItem Header="Edit">
+                <MenuItem Header="Settings..." IsEnabled="False"/>
+            </MenuItem>
             <MenuItem Header="View">
-                <MenuItem Header="Log" Command="{Binding LogViewCommand}" IsCheckable="True" IsChecked="{Binding LogIsVisible, Mode=OneWay}"/>
+                <MenuItem Header="Graph" IsEnabled="False" IsCheckable="True" IsChecked="False"/>
             </MenuItem>
             <MenuItem Header="Sensor">
+                <MenuItem Header="Details..." IsEnabled="False"/>
                 <MenuItem Header="GATT..." Command="{Binding GetGATTCommand}"/>
                 <MenuItem Header="Calibrate..." Command="{Binding OpenCalibrationWindowCommand}"/>
             </MenuItem>
@@ -48,19 +49,18 @@
             <ToolBar>
                 <ComboBox SelectedIndex="0" Width="260" IsEnabled="{Binding Port_IsOpen, Converter={StaticResource InverterConverter}}"
                       SelectedItem="{Binding SelectedPort, Mode=TwoWay}"
-                      ItemsSource="{Binding Source={StaticResource SerialPorts}}"
+                      ItemsSource="{Binding Source={StaticResource SerialPortList}}"
                       DisplayMemberPath="FriendlyPortName"
                       SelectedValuePath="PortName"/>
                 <Button Content="{Binding Port_IsOpen, Converter={StaticResource AttachDetachConverter}}" Command="{Binding SerialOpenCloseCommand}"/>
             </ToolBar>
         </ToolBarTray>
-        <Grid>
+        <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
-
             <ContentControl Grid.Column="0" Content="{Binding DiscoveredDevices}" />
 
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />

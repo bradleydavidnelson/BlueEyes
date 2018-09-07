@@ -1,5 +1,6 @@
 ﻿using BlueEyes.ViewModels;
 using GalaSoft.MvvmLight.Messaging;
+using System;
 
 namespace BlueEyes
 {
@@ -12,17 +13,23 @@ namespace BlueEyes
 
         public static void DebugWrite(string s)
         {
-            Messenger.Default.Send<GenericMessage<string[]>, LogViewModel>(new GenericMessage<string[]>(new string[] { s, null, null }));
+            Console.WriteLine(s);
+            //Messenger.Default.Send<GenericMessage<string[]>, LogViewModel>(new GenericMessage<string[]>(new string[] { s, null, null }));
         }
 
         public static void LogWrite(string s)
         {
-            Messenger.Default.Send<GenericMessage<string>, LogViewModel>(new GenericMessage<string>(s));
+            Console.WriteLine(s);
+            //Messenger.Default.Send<GenericMessage<string>, LogViewModel>(new GenericMessage<string>(s));
         }
 
         public static void LogWrite(string highlight, string normal)
         {
-            Messenger.Default.Send<GenericMessage<string[]>, LogViewModel>(new GenericMessage<string[]>(new string[] { highlight, normal }));
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(highlight);
+            Console.ResetColor();
+            Console.WriteLine(normal);
+            //Messenger.Default.Send<GenericMessage<string[]>, LogViewModel>(new GenericMessage<string[]>(new string[] { highlight, normal }));
         }
     }
 }

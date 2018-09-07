@@ -16,42 +16,31 @@ namespace BlueEyes.ViewModels
     class MainWindowViewModel : BindableBase
     {
         #region Fields
-        private const int MAX_CONNECTIONS = 3;
-
         // Application Resources
         private Bluegiga.BGLib bglib = (Bluegiga.BGLib)Application.Current.FindResource("BGLib");
         private BLEPeripheralCollection discoveredDevices = (BLEPeripheralCollection)Application.Current.FindResource("DiscoveredPeripherals");
         private BLEPeripheralCollection connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
-        private SerialPortModel _port = (SerialPortModel)Application.Current.FindResource("Port");
-        private LogWindow logWindow = (LogWindow)Application.Current.FindResource("LogWindow");
 
         private ConnectedDeviceViewModel _connectedDevicesVM = new ConnectedDeviceViewModel();
         private DiscoveredDeviceViewModel _discoveredDevicesVM = new DiscoveredDeviceViewModel();
-        private LogViewModel _log = new LogViewModel();
-        private SerialNameModel _selectedPort;
-        private byte[] cmd = new Byte[] { };
-        private bool _logIsVisible;
+        //private SerialNameModel _selectedPort;
+        private byte[] cmd = new byte[] { };
 
         // Commands
         private ICommand _exitCommand;
         private ICommand _getGattCommand;
-        private RelayCommand<CancelEventArgs> _logClosingCommand;
         private ICommand _openCalibrationWindowCommand;
         private ICommand _serialOpenCloseCommand;
         private ICommand _setSaveLocationCommand;
-        private ICommand _logViewCommand;
         #endregion
 
         #region Constructors
         public MainWindowViewModel()
         {
-            logWindow.DataContext = this;
-            LogIsVisible = Properties.Settings.Default.ShowLog;
-
             Messenger.Default.Register<GenericMessage<byte[]>>(this, (action) => ReceiveMessage(action));
 
             // Event handlers
-            _port.DataReceived += new SerialDataReceivedEventHandler(SerialDataReceivedHandler);
+            ((BindableSerialPort)Application.Current.FindResource("SelectedPort")).DataReceived += new SerialDataReceivedEventHandler(SerialDataReceivedHandler);
             bglib.BLEEventGAPScanResponse += new Bluegiga.BLE.Events.GAP.ScanResponseEventHandler(BLEGAPScanResponseEvent);
             bglib.BLEEventConnectionStatus += new Bluegiga.BLE.Events.Connection.StatusEventHandler(BLEConnectionStatusEvent);
             bglib.BLEEventConnectionDisconnected += new Bluegiga.BLE.Events.Connection.DisconnectedEventHandler(BLEConnectionDisconnectedEvent);
@@ -74,31 +63,6 @@ namespace BlueEyes.ViewModels
                 return _getGattCommand;
             }
             set { SetProperty(ref _getGattCommand, value); }
-        }
-
-        public RelayCommand<CancelEventArgs> LogClosingCommand
-        {
-            get
-            {
-                if (_logClosingCommand == null)
-                {
-                    _logClosingCommand = new RelayCommand<CancelEventArgs>(LogClosing);
-                }
-                return _logClosingCommand;
-            }
-        }
-
-        public ICommand LogViewCommand
-        {
-            get
-            {
-                if (_logViewCommand == null)
-                {
-                    _logViewCommand = new RelayCommand(LogView);
-                }
-                return _logViewCommand;
-            }
-            set { _logViewCommand = value; }
         }
 
         public ICommand ExitCommand
@@ -168,12 +132,7 @@ namespace BlueEyes.ViewModels
 
         public bool Port_IsOpen
         {
-            get { return _port.IsOpen; }
-        }
-
-        public SerialPortModel Port
-        {
-            get { return _port; }
+            get { return ((BindableSerialPort)Application.Current.FindResource("SelectedPort")).IsOpen; }
         }
 
         public SerialNameModel SelectedPort
@@ -182,16 +141,15 @@ namespace BlueEyes.ViewModels
             set { SetProperty(ref _selectedPort, value); }
         }
 
-        public LogViewModel Log
+        public bool Settings_ShowLog
         {
-            get { return _log; }
-            set { SetProperty(ref _log, value); }
-        }
-
-        public bool LogIsVisible
-        {
-            get { return _logIsVisible; }
-            set { SetProperty(ref _logIsVisible, value); }
+            get { return Properties.Settings.Default.ShowLog; }
+            set
+            {
+                Properties.Settings.Default.ShowLog = value;
+                Properties.Settings.Default.Save();
+                NotifyPropertyChanged();
+            }
         }
         #endregion
 
@@ -331,12 +289,12 @@ namespace BlueEyes.ViewModels
                 // Stop advertising
                 cmd = bglib.BLECommandGAPEndProcedure();
                 MessageWriter.LogWrite("ble_cmd_gap_end_procedure","");
-                bglib.SendCommand(_port.ToSerialPort(), cmd);
+                bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
 
                 // Reset GAP Mode
                 cmd = bglib.BLECommandGAPSetMode(0, 0);
                 MessageWriter.LogWrite("ble_cmd_gap_set_mode: ","discover=0, connect=0");
-                bglib.SendCommand(_port.ToSerialPort(), cmd);
+                bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
 
                 BLEScan();
             });
@@ -359,41 +317,15 @@ namespace BlueEyes.ViewModels
                 BLEPeripheral peripheral;
                 if (!connectedDevices.TryGetConnection(e.connection, out peripheral))
                 {
-                    MessageWriter.LogWrite("Unable to find connection " + e.connection);
+                    MessageWriter.DebugWrite("Unable to find connection " + e.connection);
                     return;
                 }
 
                 peripheral.AddNewAttribute(e.chrhandle, e.uuid);
 
-                if (e.uuid.SequenceEqual(Bluetooth.Custom.Data))
-                {
-                    peripheral.attHandleData = e.chrhandle;
-                }
-
-                if (e.uuid.SequenceEqual(Bluetooth.Custom.LPM))
-                {
-                    peripheral.attHandleLPM = e.chrhandle;
-                }
-
-                if (e.uuid.SequenceEqual(Bluetooth.Custom.RheostatValue))
-                {
-                    peripheral.attHandleCalibrate = e.chrhandle;
-                }
-
-                if (e.uuid.SequenceEqual(Bluetooth.Custom.Battery))
-                {
-                    peripheral.attHandleRail = e.chrhandle;
-                }
-
-                if (e.uuid.SequenceEqual(Bluetooth.Custom.Temperature))
-                {
-                    peripheral.attHandleTemp = e.chrhandle;
-                }
-
-                else if (e.uuid.SequenceEqual(Bluetooth.Descriptors.ClientCharacteristicConfiguration))
+                if (e.uuid.SequenceEqual(Bluetooth.Descriptors.ClientCharacteristicConfiguration))
                 {
                     peripheral.attHandleCCC.Enqueue(e.chrhandle);
-                    MessageWriter.LogWrite("Enqueue " + e.chrhandle + "; Count = " + peripheral.attHandleCCC.Count);
                 }
             });
         }
@@ -420,9 +352,6 @@ namespace BlueEyes.ViewModels
                     return;
                 }
 
-                string str = "Hi";
-
-                
                 Service s = new Service();
                 s.Handle = e.start;
                 s.GroupEnd = e.end;
@@ -463,13 +392,16 @@ namespace BlueEyes.ViewModels
 
                 BLEPerformNextTask(peripheral);
 
-                if (e.chrhandle == peripheral.attHandleLPM)
+                if (peripheral.Characteristics.ContainsKey("LPM"))
                 {
-                    // Check sleep mode
-                    cmd = bglib.BLECommandATTClientReadByHandle(e.connection, peripheral.attHandleLPM);
-                    MessageWriter.LogWrite("ble_cmd_att_client_read_by_handle: ", string.Format("connection={0}, handle={1}",
-                        e.connection, peripheral.attHandleLPM));
-                    bglib.SendCommand(_port.ToSerialPort(), cmd);
+                    if (e.chrhandle == peripheral.Characteristics["LPM"].ValueAttribute.Handle)
+                    {
+                        // Check sleep mode
+                        cmd = bglib.BLECommandATTClientReadByHandle(e.connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle);
+                        MessageWriter.LogWrite("ble_cmd_att_client_read_by_handle: ", string.Format("connection={0}, handle={1}",
+                            e.connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle));
+                        bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
+                    }
                 }
             });
         }
@@ -497,7 +429,7 @@ namespace BlueEyes.ViewModels
                 }
 
                 // DATA PACKET
-                if (e.atthandle == peripheral.attHandleData)
+                if (e.atthandle == peripheral.Characteristics["Data"].ValueAttribute.Handle)
                 {
                     // Decode packet
                     // The following decodes each pair of bytes into a single data point
@@ -508,7 +440,7 @@ namespace BlueEyes.ViewModels
                         val[i] = raw * 2500 / 2047;
                     }
 
-                    peripheral.Characteristics["Data"].Value = val.Average();
+                    peripheral.SetCharacteristicValue("Data", val.Average());
 
                     WriteData(peripheral, val);
                 }
@@ -522,20 +454,20 @@ namespace BlueEyes.ViewModels
                         short data = BitConverter.ToInt16(e.value, 0);
 
                         // Calculate rail
-                        peripheral.Characteristics["Battery"].Value = data * 2500 / 2047;
+                        peripheral.SetCharacteristicValue("Battery", data * 2500 / 2047);
                     }
                 }
 
                 // TEMPERATURE PACKET
-                if (e.atthandle == peripheral.attHandleTemp)
+                if (e.atthandle == peripheral.Characteristics["Temperature"].ValueAttribute.Handle)
                 {
                     short value = BitConverter.ToInt16(e.value, 0);
 
-                    peripheral.Characteristics["Temperature"].Value = (value * 2500 / 2047) * 10 / 45 - 169; // Not really characterized, but it should be close
+                    peripheral.SetCharacteristicValue("Temperature", (value * 2500 / 2047) * 10 / 45 - 169); // Not really characterized, but it should be close
                 }
 
                 // Low Power Mode
-                if (e.atthandle == peripheral.attHandleLPM)
+                if (e.atthandle == peripheral.Characteristics["LPM"].ValueAttribute.Handle)
                 {
                     // Sleep bit
                     if ((e.value[0] & 0x01) == 0x00) // Device is asleep
@@ -564,7 +496,7 @@ namespace BlueEyes.ViewModels
                     peripheral.Connection,
                     start,
                     end));
-                bglib.SendCommand(_port.ToSerialPort(), cmd);
+                bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
             }
 
             // Have attributes been found?
@@ -580,7 +512,7 @@ namespace BlueEyes.ViewModels
                     start,
                     end,
                     BitConverter.ToString(primaryService)));
-                bglib.SendCommand(_port.ToSerialPort(), cmd);
+                bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
             }
 
             else if (peripheral.attHandleCCC.Count > 0)
@@ -590,17 +522,17 @@ namespace BlueEyes.ViewModels
                 byte[] cmd = bglib.BLECommandATTClientAttributeWrite(peripheral.Connection, peripheral.attHandleCCC.Peek(), indications);
                 MessageWriter.LogWrite("ble_cmd_att_client_attribute_write: ", string.Format("connection={0}, att_handle={1}, data={2}",
                     peripheral.Connection, peripheral.attHandleCCC.Dequeue(), BitConverter.ToString(indications)));
-                bglib.SendCommand(_port.ToSerialPort(), cmd);
+                bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
             }
 
             // Is the low power mode state known?
-            else if (peripheral.attHandleLPM > 0 && peripheral.LowPowerMode == BLEPeripheral.LPM.Unknown)
+            else if (peripheral.Characteristics["LPM"].ValueAttribute.Handle > 0 && peripheral.LowPowerMode == BLEPeripheral.LPM.Unknown)
             {
                 // Check sleep mode
-                cmd = bglib.BLECommandATTClientReadByHandle(peripheral.Connection, peripheral.attHandleLPM);
+                cmd = bglib.BLECommandATTClientReadByHandle(peripheral.Connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle);
                 MessageWriter.LogWrite("ble_cmd_att_client_read_by_handle: ", string.Format("connection={0}, handle={1}",
-                    peripheral.Connection, peripheral.attHandleLPM));
-                bglib.SendCommand(_port.ToSerialPort(), cmd);
+                    peripheral.Connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle));
+                bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
             }
         }
 
@@ -615,13 +547,13 @@ namespace BlueEyes.ViewModels
                 Convert.ToUInt16(scan_window * 1000 / 625),
                 active); // 125ms interval, 125ms window, active scanning
             MessageWriter.LogWrite("ble_cmd_gap_set_scan_parameters: ", string.Format("scan_interval={0}; scan_window={1}, active={2}", scan_interval, scan_window, active));
-            bglib.SendCommand(_port.ToSerialPort(), cmd);
+            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
 
             // Begin discovery mode
             byte mode = 1;
             cmd = bglib.BLECommandGAPDiscover(mode); // generic discovery mode
             MessageWriter.LogWrite("ble_cmd_gap_discover: ", string.Format("mode={0}", mode));
-            bglib.SendCommand(_port.ToSerialPort(), cmd);
+            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
         }
 
         private void Exit(object obj)
@@ -650,25 +582,6 @@ namespace BlueEyes.ViewModels
             }
         }
 
-        public void LogClosing(CancelEventArgs e)
-        {
-            // Hide instead of close
-            e.Cancel = true;
-            LogIsVisible = false;
-        }
-
-        private void LogView(object obj)
-        {
-            if (_logIsVisible)
-            {
-                logWindow.Hide();
-            }
-            else
-            {
-                logWindow.Show();
-            }
-        }
-
         private void OpenCalibrationWindow(object obj)
         {
             MessageWriter.LogWrite("Opening calibration window...");
@@ -678,7 +591,7 @@ namespace BlueEyes.ViewModels
 
         private void ReceiveMessage(GenericMessage<byte[]> message)
         {
-            bglib.SendCommand(_port.ToSerialPort(), message.Content);
+            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), message.Content);
         }
 
         private void SerialDataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
@@ -707,6 +620,7 @@ namespace BlueEyes.ViewModels
             });
         }
 
+        [STAThread]
         private void SetSaveLocation(object obj)
         {
             System.Windows.Forms.FolderBrowserDialog folderBrowser = new System.Windows.Forms.FolderBrowserDialog();
@@ -734,22 +648,25 @@ namespace BlueEyes.ViewModels
 
         private void SerialOpenClose(object obj)
         {
-            if (_port.IsOpen)
+            // Close port
+            if (((BindableSerialPort)Application.Current.FindResource("SelectedPort")).IsOpen)
             {
                 MessageWriter.LogWrite(string.Format("Closing {0}...", _selectedPort.PortName));
-                _port.Close();
+                ((BindableSerialPort)Application.Current.FindResource("SelectedPort")).Close();
                 NotifyPropertyChanged("Port_IsOpen");
                 MessageWriter.LogWrite(_selectedPort.PortName + " closed");
 
                 discoveredDevices.Clear();
             }
-            else // Is Closed
+
+            // Open port
+            else
             {
                 MessageWriter.LogWrite(string.Format("Opening {0}...", _selectedPort.PortName));
-                _port.PortName = _selectedPort.PortName;
-                _port.Open();
-                _port.DiscardInBuffer();
-                _port.DiscardOutBuffer();
+                ((BindableSerialPort)Application.Current.FindResource("SelectedPort")).PortName = _selectedPort.PortName;
+                ((BindableSerialPort)Application.Current.FindResource("SelectedPort")).Open();
+                ((BindableSerialPort)Application.Current.FindResource("SelectedPort")).DiscardInBuffer();
+                ((BindableSerialPort)Application.Current.FindResource("SelectedPort")).DiscardOutBuffer();
                 NotifyPropertyChanged("Port_IsOpen");
                 MessageWriter.LogWrite(_selectedPort.PortName + " opened");
 
@@ -759,18 +676,21 @@ namespace BlueEyes.ViewModels
 
         private void WriteData(BLEPeripheral peripheral, double[] newData)
         {
+            long timestamp = peripheral.UptimeMilliseconds;
+
             // Write data to output file
             using (StreamWriter output = new StreamWriter(peripheral.SaveFile, true))
             {
                 for (int k = 0; k < newData.Length; k++)
                 {
-                    long freq = 30;
-
-                    // Uptime
-                    string outputLine = string.Format("{0}", peripheral.UptimeMilliseconds - (((newData.Length - 1) - k) / freq));
+                    long period = 333;
 
                     // Name
-                    outputLine += "," + peripheral.Name;
+                    string outputLine = peripheral.Name;
+
+                    // Uptime
+                    double measurementTime = timestamp - ((period / newData.Length) * (newData.Length-k+1));
+                    outputLine += string.Format(",{0}", measurementTime);
 
                     // Main data
                     outputLine += "," + newData[k];

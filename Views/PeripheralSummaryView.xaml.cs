@@ -16,19 +16,13 @@ using System.Windows.Shapes;
 namespace BlueEyes.Views
 {
     /// <summary>
-    /// Interaction logic for LogView.xaml
+    /// Interaction logic for PeripheralSummaryView.xaml
     /// </summary>
-    public partial class LogView : UserControl
+    public partial class PeripheralSummaryView : UserControl
     {
-        public LogView()
+        public PeripheralSummaryView()
         {
             InitializeComponent();
-        }
-
-        private void ItemsControl_SourceUpdated(object sender, DataTransferEventArgs e)
-        {
-            Console.WriteLine("Hello");
-            scrollViewer.ScrollToBottom();
         }
     }
 }

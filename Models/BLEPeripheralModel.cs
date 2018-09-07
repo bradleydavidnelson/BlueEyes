@@ -18,39 +18,32 @@ namespace BlueEyes.Models
     public class BLEPeripheral : BindableBase
     {
         #region Fields
+        const int MAXIMUM_DEVICES = 3;
+
         // Global
         private Bluegiga.BGLib bglib = (Bluegiga.BGLib)Application.Current.FindResource("BGLib");
-        private SerialPortModel port = (SerialPortModel)Application.Current.FindResource("Port");
+        private BLEPeripheralCollection connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
 
         // Collections
         private ConcurrentDictionary<ushort,Attribute> _attributes = new ConcurrentDictionary<ushort,Attribute>();
         private ConcurrentDictionary<string,Service> _services = new ConcurrentDictionary<string,Service>();
         private ConcurrentDictionary<string,Characteristic> _characteristics = new ConcurrentDictionary<string,Characteristic>();
-        public DynamicDictionary Serv = new DynamicDictionary();
 
         // misc
-        private double _adc1;
         private byte[] _address;
         private byte _addrType;
         private byte _connection;
         private ConnState _connectionState = ConnState.Disconnected;
         private ICommand _connectCommand;
         private bool _isConnected;
-        private double _data;
         private LPM _lowPowerMode = LPM.Unknown;
         private ICommand _lpmCommand;
         private string _name;
         private string _saveFile;
-        private double _temperature;
         private Stopwatch _uptime = new Stopwatch();
         private DispatcherTimer _uptimeDispatcher = new DispatcherTimer();
 
         // Easy handles TODO depreciate
-        public ushort attHandleData { get; set; }
-        public ushort attHandleLPM { get; set; }
-        public ushort attHandleCalibrate { get; set; }
-        public ushort attHandleTemp { get; set; }
-        public ushort attHandleRail { get; set; }
         public Queue<ushort> attHandleCCC { get; set; } = new Queue<ushort>();
 
         public enum ConnState { Disconnected, Connecting, Connected };
@@ -70,10 +63,16 @@ namespace BlueEyes.Models
         #endregion
 
         #region Properties
-        public double ADC1
+        public double Battery
         {
-            get { return _adc1; }
-            set { SetProperty(ref _adc1, value); }
+            get
+            {
+                if (_characteristics.ContainsKey("Battery"))
+                {
+                    return _characteristics["Battery"].Value;
+                }
+                return 0;
+            }
         }
 
         public byte[] Address
@@ -130,7 +129,7 @@ namespace BlueEyes.Models
             {
                 if (_connectCommand == null)
                 {
-                    _connectCommand = new RelayCommand(ConnectDisconnect);
+                    _connectCommand = new RelayCommand(ConnectDisconnect, CanPerformConnectCommand);
                 }
                 return _connectCommand;
             }
@@ -171,13 +170,21 @@ namespace BlueEyes.Models
                     _isConnected = false;
                 }
                 NotifyPropertyChanged("IsConnected");
+
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
         public double Data
         {
-            get { return _data; }
-            set { SetProperty(ref _data, value); }
+            get
+            {
+                if (_characteristics.ContainsKey("Data"))
+                {
+                    return _characteristics["Data"].Value;
+                }
+                return 0;
+            }
         }
 
         public long ElapsedMilliseconds
@@ -266,8 +273,14 @@ namespace BlueEyes.Models
 
         public double Temperature
         {
-            get { return _temperature; }
-            set { SetProperty(ref _temperature, value); }
+            get
+            {
+                if (_characteristics.ContainsKey("Temperature"))
+                {
+                    return _characteristics["Temperature"].Value;
+                }
+                return 0;
+            }
         }
 
         public string Uptime
@@ -305,6 +318,20 @@ namespace BlueEyes.Models
             attr.UUID = uuid;
             attr.Description = Bluetooth.Parser.Lookup(uuid);
             Attributes.TryAdd(handle, attr);
+        }
+
+        private bool CanPerformConnectCommand(object obj)
+        {
+            if (_connectionState == ConnState.Connected)
+            {
+                return true;
+            }
+            else if (_connectionState == ConnState.Connecting)
+            {
+                return false;
+            }
+
+            return connectedDevices.Count < MAXIMUM_DEVICES;
         }
 
         public bool TryAddService(Service s)
@@ -364,7 +391,7 @@ namespace BlueEyes.Models
                 conn_interval_max,
                 timeout,
                 latency));
-            bglib.SendCommand(port.ToSerialPort(), cmd);
+            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
 
             // Initialize connecting timeout timer
             DispatcherTimer connectionTimer = new DispatcherTimer();
@@ -398,7 +425,7 @@ namespace BlueEyes.Models
             // Disconnect
             byte[] cmd = bglib.BLECommandConnectionDisconnect(Connection);
             MessageWriter.LogWrite("ble_cmd_connection_disconnect: ", string.Format("connection={0}", Connection));
-            bglib.SendCommand(port.ToSerialPort(), cmd);
+            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
         }
 
         public List<Service> GetServices()
@@ -410,10 +437,10 @@ namespace BlueEyes.Models
         {
             // Wake up
             byte[] lpm_bit = new byte[] { 0x00 };
-            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, attHandleLPM, lpm_bit);
+            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, Characteristics["LPM"].ValueAttribute.Handle, lpm_bit);
             MessageWriter.LogWrite("ble_cmd_att_client_attribute_write: ", string.Format("connection={0}, handle={1}, data={2}",
-                Connection, attHandleLPM, BitConverter.ToString(lpm_bit)));
-            bglib.SendCommand(port.ToSerialPort(), cmd);
+                Connection, Characteristics["LPM"].ValueAttribute.Handle, BitConverter.ToString(lpm_bit)));
+            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
 
             // Stop tracking uptime
             _uptimeDispatcher.IsEnabled = false;
@@ -431,10 +458,10 @@ namespace BlueEyes.Models
         {
             // Wake up
             byte[] lpm_bit = new byte[] { 0x01 };
-            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, attHandleLPM, lpm_bit);
+            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, Characteristics["LPM"].ValueAttribute.Handle, lpm_bit);
             MessageWriter.LogWrite("ble_cmd_att_client_attribute_write: ", string.Format("connection={0}, handle={1}, data={2}",
-                Connection, attHandleLPM, BitConverter.ToString(lpm_bit)));
-            bglib.SendCommand(port.ToSerialPort(), cmd);
+                Connection, Characteristics["LPM"].ValueAttribute.Handle, BitConverter.ToString(lpm_bit)));
+            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
 
             // Track uptime
             _uptimeDispatcher.IsEnabled = true;
@@ -486,6 +513,12 @@ namespace BlueEyes.Models
                     }
                 }
             }
+        }
+
+        public void SetCharacteristicValue(string name, double value)
+        {
+            Characteristics[name].Value = value;
+            NotifyPropertyChanged(name);
         }
 
         private void SleepWake(object obj)

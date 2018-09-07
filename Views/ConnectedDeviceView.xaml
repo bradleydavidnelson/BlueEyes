@@ -5,8 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:BlueEyes.Views"
              xmlns:converters="clr-namespace:BlueEyes.Converters"
-             mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300">
+             mc:Ignorable="d">
 
     <UserControl.Resources>
         <converters:ZeroToVisibilityConverter x:Key="VisibilityConverter" ZeroValue="Hidden" NonZeroValue="Visible"/>
@@ -21,9 +20,9 @@
                 </Style>
             </DataGrid.RowHeaderStyle>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ADC0" Binding="{Binding Data}"/>
-                <DataGridTextColumn Header="ADC1" Binding="{Binding ADC1}"/>
-                <DataGridTextColumn Header="Temp" Binding="{Binding Temperature}"/>
+                <DataGridTextColumn Header="Data (mV)" Binding="{Binding Data}"/>
+                <DataGridTextColumn Header="Supply (mV)" Binding="{Binding Battery}"/>
+                <DataGridTextColumn Header="Temperature (C)" Binding="{Binding Temperature}"/>
                 <DataGridTextColumn Header="Uptime" Binding="{Binding Uptime}"/>
                 <DataGridTemplateColumn Header="LPM">
                     <DataGridTemplateColumn.CellTemplate>
