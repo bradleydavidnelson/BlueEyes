@@ -70,12 +70,14 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BlueGiga\BGLib.cs" />
-    <Compile Include="Bluetooth\UUID.cs" />
+    <Compile Include="Bluetooth\AssignedNumbers.cs" />
+    <Compile Include="Bluetooth\GATT.cs" />
     <Compile Include="BindableSerialPort.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Utilities\ConcurrentDictionary.cs" />
     <Compile Include="Converters\ZeroToValueConverter.cs" />
+    <Compile Include="Utilities\KeyValueMap.cs" />
     <Compile Include="Utilities\MessageWriter.cs" />
     <Compile Include="Models\AttributeGroupModel.cs" />
     <Compile Include="Models\AttributeModel.cs" />
@@ -174,7 +176,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\PortCollection.cs" />
+    <Compile Include="Models\SerialPortCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

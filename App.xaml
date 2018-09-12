@@ -12,7 +12,6 @@
     <Application.Resources>
         <bg:BGLib x:Key="BGLib"/>
         <models:SerialPortCollection x:Key="SerialPortList"/>
-        <local:BindableSerialPort x:Key="SelectedPort"/>
         <models:BLEPeripheralCollection x:Key="DiscoveredPeripherals"/>
         <models:BLEPeripheralCollection x:Key="ConnectedPeripherals"/>
         <properties:Settings x:Key="Settings"/>

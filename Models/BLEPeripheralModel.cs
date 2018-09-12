@@ -29,16 +29,22 @@ namespace BlueEyes.Models
         private ConcurrentDictionary<string,Service> _services = new ConcurrentDictionary<string,Service>();
         private ConcurrentDictionary<string,Characteristic> _characteristics = new ConcurrentDictionary<string,Characteristic>();
 
-        // misc
+        // Bluetooth 
         private byte[] _address;
         private byte _addrType;
         private byte _connection;
+        private byte flags;
+        private string shortName;
+        private string _name;
+
+        // misc
+
         private ConnState _connectionState = ConnState.Disconnected;
         private ICommand _connectCommand;
         private bool _isConnected;
         private LPM _lowPowerMode = LPM.Unknown;
         private ICommand _lpmCommand;
-        private string _name;
+        
         private string _saveFile;
         private Stopwatch _uptime = new Stopwatch();
         private DispatcherTimer _uptimeDispatcher = new DispatcherTimer();
@@ -196,6 +202,37 @@ namespace BlueEyes.Models
                     _uptime.Start();
                 }
                 return _uptime.ElapsedMilliseconds;
+            }
+        }
+
+        public byte Flags
+        {
+            get { return flags; }
+            set { SetProperty(ref flags, value); }
+        }
+
+        public string FlagString
+        {
+            get
+            {
+                string result = "";
+                if ((flags & 0x01) == 0x01)
+                {
+                    result += "BLE Limited Discoverable Mode" + Environment.NewLine;
+                }
+                if ((flags & 0x02) == 0x02)
+                {
+                    result += "BLE General Discoverable Mode" + Environment.NewLine;
+                }
+                if ((flags & 0x04) == 0x04)
+                {
+                    result += "BR/EDR Not Supported" + Environment.NewLine;
+                }
+                if ((flags & 0x10) == 0x10)
+                {
+                    result += "Simultaneous LE and BR/EDR to Same Device Capable" + Environment.NewLine;
+                }
+                return result.Trim(Environment.NewLine.ToCharArray());
             }
         }
 
@@ -391,7 +428,7 @@ namespace BlueEyes.Models
                 conn_interval_max,
                 timeout,
                 latency));
-            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
+            MessageWriter.BLEWrite(cmd);
 
             // Initialize connecting timeout timer
             DispatcherTimer connectionTimer = new DispatcherTimer();
@@ -425,7 +462,7 @@ namespace BlueEyes.Models
             // Disconnect
             byte[] cmd = bglib.BLECommandConnectionDisconnect(Connection);
             MessageWriter.LogWrite("ble_cmd_connection_disconnect: ", string.Format("connection={0}", Connection));
-            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
+            MessageWriter.BLEWrite(cmd);
         }
 
         public List<Service> GetServices()
@@ -437,10 +474,10 @@ namespace BlueEyes.Models
         {
             // Wake up
             byte[] lpm_bit = new byte[] { 0x00 };
-            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, Characteristics["LPM"].ValueAttribute.Handle, lpm_bit);
+            byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, Characteristics["LPM"].ValueAttribute.Handle, lpm_bit);
             MessageWriter.LogWrite("ble_cmd_att_client_attribute_write: ", string.Format("connection={0}, handle={1}, data={2}",
                 Connection, Characteristics["LPM"].ValueAttribute.Handle, BitConverter.ToString(lpm_bit)));
-            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
+            MessageWriter.BLEWrite(cmd);
 
             // Stop tracking uptime
             _uptimeDispatcher.IsEnabled = false;
@@ -458,10 +495,10 @@ namespace BlueEyes.Models
         {
             // Wake up
             byte[] lpm_bit = new byte[] { 0x01 };
-            Byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, Characteristics["LPM"].ValueAttribute.Handle, lpm_bit);
+            byte[] cmd = bglib.BLECommandATTClientAttributeWrite(Connection, Characteristics["LPM"].ValueAttribute.Handle, lpm_bit);
             MessageWriter.LogWrite("ble_cmd_att_client_attribute_write: ", string.Format("connection={0}, handle={1}, data={2}",
                 Connection, Characteristics["LPM"].ValueAttribute.Handle, BitConverter.ToString(lpm_bit)));
-            bglib.SendCommand((BindableSerialPort)Application.Current.FindResource("SelectedPort"), cmd);
+            MessageWriter.BLEWrite(cmd);
 
             // Track uptime
             _uptimeDispatcher.IsEnabled = true;

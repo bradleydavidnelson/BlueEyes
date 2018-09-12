@@ -6,6 +6,20 @@ namespace BlueEyes
 {
     public class BindableSerialPort : SerialPort, INotifyPropertyChanged
     {
+        #region Extensions
+        private string friendlyPortName = "";
+
+        public string FriendlyPortName
+        {
+            get { return friendlyPortName; }
+            set
+            {
+                friendlyPortName = value;
+                NotifyPropertyChanged();
+            }
+        }
+        #endregion
+
         #region SerialPort
         public new string PortName
         {
