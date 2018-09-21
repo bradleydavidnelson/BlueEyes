@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
@@ -13,8 +14,6 @@ using System.Windows.Threading;
 
 namespace BlueEyes.Models
 {
-    public class BLEPeripheralModel { }
-
     public class BLEPeripheral : BindableBase
     {
         #region Fields
@@ -34,7 +33,7 @@ namespace BlueEyes.Models
         private byte _addrType;
         private byte _connection;
         private byte flags;
-        private string shortName;
+        private string shortenedLocalName;
         private string _name;
 
         // misc
@@ -308,6 +307,12 @@ namespace BlueEyes.Models
             set { SetProperty(ref _services, value); }
         }
 
+        public string ShortenedLocalName
+        {
+            get { return shortenedLocalName; }
+            set { SetProperty(ref shortenedLocalName, value); }
+        }
+
         public double Temperature
         {
             get
@@ -464,6 +469,36 @@ namespace BlueEyes.Models
             MessageWriter.LogWrite("ble_cmd_connection_disconnect: ", string.Format("connection={0}", Connection));
             MessageWriter.BLEWrite(cmd);
         }
+
+        /*public IItemProperties GetDataCharacteristics()
+        {
+            List<ItemPropertyInfo> result = new List<ItemPropertyInfo>();
+            
+            foreach (Characteristic c in Characteristics.Values)
+            {
+                // Identify name
+                if (c.Descriptors.ContainsKey("CharacteristicUserDescription"))
+                {
+                    // Do this
+                }
+                else
+                {
+                    string name = c.Description;
+                }
+
+                // Identify type
+                if (c.Descriptors.ContainsKey("CharacteristicPresentationFormat"))
+                {
+                    // DO this
+                }
+                else
+                {
+                    Type type = Type.GetType(;
+                }
+
+                result.Add(new ItemPropertyInfo(,,null))
+            }
+        }*/
 
         public List<Service> GetServices()
         {

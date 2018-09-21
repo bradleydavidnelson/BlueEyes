@@ -1,5 +1,6 @@
 ﻿using BlueEyes.Models;
 using System.Windows;
+using System.Windows.Input;
 
 namespace BlueEyes.ViewModels
 {
