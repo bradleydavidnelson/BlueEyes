@@ -194,6 +194,12 @@ namespace BlueEyes.ViewModels
                     }
 
                     // Complete local name
+                    if (adType == Bluetooth.GenericAccessProfile.AssignedNumbers.Get("Shortened Local Name"))
+                    {
+                        peripheral.ShortenedLocalName = Encoding.ASCII.GetString(element);
+                    }
+
+                    // Complete local name
                     if (adType == Bluetooth.GenericAccessProfile.AssignedNumbers.Get("Complete Local Name"))
                     {
                         peripheral.Name = Encoding.ASCII.GetString(element);

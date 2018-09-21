@@ -75,6 +75,7 @@
     <Compile Include="BindableSerialPort.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Models\ObservableDictionary.cs" />
     <Compile Include="Utilities\ConcurrentDictionary.cs" />
     <Compile Include="Converters\ZeroToValueConverter.cs" />
     <Compile Include="Utilities\KeyValueMap.cs" />
@@ -118,6 +119,9 @@
     <Compile Include="ViewModels\DiscoveredDeviceViewModel.cs" />
     <Compile Include="ViewModels\LogListViewModel.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="Views\DataDisplaySelectorView.xaml.cs">
+      <DependentUpon>DataDisplaySelectorView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\PeripheralSummaryView.xaml.cs">
       <DependentUpon>PeripheralSummaryView.xaml</DependentUpon>
     </Compile>
@@ -138,6 +142,10 @@
     <Compile Include="Views\SensorWindowView.xaml.cs">
       <DependentUpon>SensorWindowView.xaml</DependentUpon>
     </Compile>
+    <Page Include="Views\DataDisplaySelectorView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\PeripheralSummaryView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -14,6 +14,14 @@
     <DockPanel>
         <DataGrid HorizontalAlignment="Left" VerticalAlignment="Top" ItemsSource="{Binding ConnectedDevices}" AutoGenerateColumns="False" 
                   Visibility="{Binding ConnectedDevices.Count, Converter={StaticResource VisibilityConverter}}">
+           
+            
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Select Columns..." Command="{Binding SelectColumnsCommand}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            
             <DataGrid.RowHeaderStyle>
                 <Style TargetType="{x:Type DataGridRowHeader}">
                     <Setter Property="Content" Value="{Binding Name}" />

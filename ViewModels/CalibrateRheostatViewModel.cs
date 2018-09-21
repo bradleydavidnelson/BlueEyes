@@ -47,7 +47,7 @@ namespace BlueEyes.ViewModels
             {
                 if (_selectedPeripheral == null)
                     return false;
-                return (_selectedPeripheral.Characteristics["RheostatSaveCommand"] != null);
+                return (_selectedPeripheral.Characteristics.ContainsKey("RheostatSaveCommand"));
             }
         }
 

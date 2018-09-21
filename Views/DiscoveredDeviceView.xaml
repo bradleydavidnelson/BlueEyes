@@ -19,6 +19,8 @@
     </UserControl.Resources>
     
     <DockPanel>
-        <ItemsControl ItemsSource="{Binding DiscoveredDevices}" ItemTemplate="{StaticResource discoveredDevicesTemplate}"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding DiscoveredDevices}" ItemTemplate="{StaticResource discoveredDevicesTemplate}"/>
+        </ScrollViewer>
     </DockPanel>
 </UserControl>
