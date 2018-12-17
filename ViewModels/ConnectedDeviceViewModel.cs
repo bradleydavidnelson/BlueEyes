@@ -1,7 +1,9 @@
 ﻿using BlueEyes.Models;
 using BlueEyes.Utilities;
 using BlueEyes.Views;
+using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace BlueEyes.ViewModels

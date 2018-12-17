@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
@@ -27,14 +28,17 @@ namespace BlueEyes.Models
         private ConcurrentDictionary<ushort,Attribute> _attributes = new ConcurrentDictionary<ushort,Attribute>();
         private ConcurrentDictionary<string,Service> _services = new ConcurrentDictionary<string,Service>();
         private ConcurrentDictionary<string,Characteristic> _characteristics = new ConcurrentDictionary<string,Characteristic>();
+        private ObservableDictionary<byte, string> _adData = new ObservableDictionary<byte, string>();
 
         // Bluetooth 
         private byte[] _address;
         private byte _addrType;
+        private byte _bond;
         private byte _connection;
         private byte flags;
         private string shortenedLocalName;
         private string _name;
+        private int _rssi;
 
         // misc
 
@@ -68,16 +72,10 @@ namespace BlueEyes.Models
         #endregion
 
         #region Properties
-        public double Battery
+        public ObservableDictionary<byte,string> AdData
         {
-            get
-            {
-                if (_characteristics.ContainsKey("Battery"))
-                {
-                    return _characteristics["Battery"].Value;
-                }
-                return 0;
-            }
+            get { return _adData; }
+            set { SetProperty(ref _adData, value); }
         }
 
         public byte[] Address
@@ -98,13 +96,31 @@ namespace BlueEyes.Models
         
         public string AddressString
         {
-            get { return BitConverter.ToString(_address); }
+            get { return BitConverter.ToString(_address).Replace('-',':'); }
         }
 
         public ConcurrentDictionary<ushort,Attribute> Attributes
         {
             get { return _attributes; }
             private set { SetProperty(ref _attributes, value); }
+        }
+
+        public double Battery
+        {
+            get
+            {
+                if (_characteristics.ContainsKey("Battery"))
+                {
+                    return _characteristics["Battery"].Value;
+                }
+                return 0;
+            }
+        }
+
+        public byte Bond
+        {
+            get { return _bond; }
+            set { SetProperty(ref _bond, value); }
         }
 
         public ConcurrentDictionary<string,Characteristic> Characteristics
@@ -169,6 +185,7 @@ namespace BlueEyes.Models
                 if (value == ConnState.Connected)
                 {
                     _isConnected = true;
+                    createSaveFile();
                 }
                 else
                 {
@@ -288,14 +305,22 @@ namespace BlueEyes.Models
             set { SetProperty(ref _name, value); }
         }
 
+        public int RSSI
+        {
+            get { return _rssi; }
+            set { SetProperty(ref _rssi, value); }
+        }
+
         public string SaveFile
         {
             get
             {
+                // Create filename
                 if (_saveFile == null)
                 {
-                    _saveFile = Properties.Settings.Default.SaveLocation + "\\" + Name + "_" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + DateTime.Now.Hour + DateTime.Now.Minute + DateTime.Now.Second +".csv";
+                    createSaveFile();
                 }
+
                 return _saveFile;
             }
             private set { _saveFile = value; }
@@ -499,6 +524,21 @@ namespace BlueEyes.Models
                 result.Add(new ItemPropertyInfo(,,null))
             }
         }*/
+
+        private void createSaveFile()
+        {
+            // Make sure location is valid
+            try
+            {
+                string fileLocation = Properties.Settings.Default.SaveLocation + "\\" + Name + "_" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + DateTime.Now.Hour + DateTime.Now.Minute + DateTime.Now.Second + ".csv";
+                File.Create(fileLocation);
+                SaveFile = fileLocation;
+            }
+            catch(UnauthorizedAccessException ex)
+            {
+                MessageBox.Show(ex.GetType().ToString() + Environment.NewLine + "Check file save location");
+            }
+        }
 
         public List<Service> GetServices()
         {

@@ -179,28 +179,37 @@ namespace BlueEyes.ViewModels
                     discoveredPeripherals.Add(peripheral);
                 }
 
+                // Update RSSI
+                peripheral.RSSI = e.rssi;
+                peripheral.Bond = e.bond;
+
                 // Parse packet
                 byte[] remainingData = e.data;
                 while (remainingData.Length > 0)
                 {
                     ushort elementLength = remainingData[0];
-                    ushort adType = remainingData[1];
+                    byte adType = remainingData[1];
                     byte[] element = remainingData.Skip(2).Take(elementLength - 1).ToArray();
 
+                    if (!peripheral.AdData.ContainsKey(adType))
+                    {
+                        peripheral.AdData.Add(adType, BitConverter.ToString(element));
+                    }
+
                     // Flags
-                    if (adType == Bluetooth.GenericAccessProfile.AssignedNumbers.Get("Flags"))
+                    if (adType == Bluetooth.GenericAccessProfile.AD_Type.Get("Flags"))
                     {
                         peripheral.Flags = element.FirstOrDefault();
                     }
 
                     // Complete local name
-                    if (adType == Bluetooth.GenericAccessProfile.AssignedNumbers.Get("Shortened Local Name"))
+                    if (adType == Bluetooth.GenericAccessProfile.AD_Type.Get("Shortened Local Name"))
                     {
                         peripheral.ShortenedLocalName = Encoding.ASCII.GetString(element);
                     }
 
                     // Complete local name
-                    if (adType == Bluetooth.GenericAccessProfile.AssignedNumbers.Get("Complete Local Name"))
+                    if (adType == Bluetooth.GenericAccessProfile.AD_Type.Get("Complete Local Name"))
                     {
                         peripheral.Name = Encoding.ASCII.GetString(element);
                     }
@@ -603,6 +612,7 @@ namespace BlueEyes.ViewModels
             bglib.SendCommand(SelectedPort, message.Content);
         }
 
+        [STAThread]
         private void SerialDataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
         {
             Application.Current.Dispatcher.Invoke(delegate
@@ -691,35 +701,42 @@ namespace BlueEyes.ViewModels
         {
             long timestamp = peripheral.UptimeMilliseconds;
 
-            // Write data to output file
-            using (StreamWriter output = new StreamWriter(peripheral.SaveFile, true))
+            for (int k = 0; k < newData.Length; k++)
             {
-                for (int k = 0; k < newData.Length; k++)
+                long period = 333;
+
+                // Name
+                string outputLine = peripheral.Name;
+
+                // Uptime
+                double measurementTime = timestamp - ((period / newData.Length) * (newData.Length - k + 1));
+                outputLine += string.Format(",{0}", measurementTime);
+
+                // Main data
+                outputLine += "," + newData[k];
+
+                // Battery level
+                if (peripheral.Characteristics.ContainsKey("Battery"))
                 {
-                    long period = 333;
+                    outputLine += string.Format(",{0}", peripheral.Characteristics["Battery"].Value);
+                }
 
-                    // Name
-                    string outputLine = peripheral.Name;
+                // Temperature
+                if (peripheral.Characteristics.ContainsKey("Temperature"))
+                {
+                    outputLine += string.Format(",{0:0.0}", peripheral.Characteristics["Temperature"].Value);
+                }
 
-                    // Uptime
-                    double measurementTime = timestamp - ((period / newData.Length) * (newData.Length-k+1));
-                    outputLine += string.Format(",{0}", measurementTime);
-
-                    // Main data
-                    outputLine += "," + newData[k];
-
-                    // Battery level
-                    if (peripheral.Characteristics.ContainsKey("Battery"))
+                try
+                {
+                    using (StreamWriter output = new StreamWriter(peripheral.SaveFile, true))
                     {
-                        outputLine += string.Format(",{0}", peripheral.Characteristics["Battery"].Value);
+                        output.WriteLine(outputLine);
                     }
-
-                    // Temperature
-                    if (peripheral.Characteristics.ContainsKey("Temperature"))
-                    {
-                        outputLine += string.Format(",{0:0.0}", peripheral.Characteristics["Temperature"].Value);
-                    }
-                    output.WriteLine(outputLine);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    MessageWriter.LogWrite("Error writing file. Check save location.");
                 }
             }
         }

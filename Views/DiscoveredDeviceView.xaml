@@ -7,20 +7,49 @@
              mc:Ignorable="d">
 
     <UserControl.Resources>
-        <DataTemplate x:Key="discoveredDevicesTemplate">
-            <DockPanel DockPanel.Dock="Top" Margin="4,2">
-                <StackPanel Orientation="Vertical">
-                    <TextBlock Text="{Binding Path=Name}"/>
-                    <TextBlock Text="{Binding Path=AddressString}" FontSize="10" />
-                </StackPanel>
-                <Button DockPanel.Dock="Right" Content="{Binding Path=ConnectAction}" Width="80" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Path=ConnectCommand}"/>
-            </DockPanel>
+        <DataTemplate x:Key="discoveryTemplate">
+            <Expander Margin="4,4">
+                <Expander.Header>
+                    <DockPanel  HorizontalAlignment="{Binding Path=HorizontalAlignment,  RelativeSource={RelativeSource FindAncestor,  AncestorType={x:Type ContentPresenter}}, Mode=OneWayToSource}" >
+                        <Button DockPanel.Dock="Right" Content="{Binding Path=ConnectAction}" Width="80" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Path=ConnectCommand}"/>
+
+                        <StackPanel Orientation="Vertical" DockPanel.Dock="Left">
+                            <TextBlock Text="{Binding Path=Name}" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Path=AddressString}" FontSize="10" />
+                        </StackPanel>
+                    </DockPanel>
+                </Expander.Header>
+                
+                <Expander.Content>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock>
+                            <Run Text="RSSI: " Foreground="Gray"/>
+                            <Run Text="{Binding RSSI}"/>
+                            <Run Text=" dBm"/>
+                        </TextBlock>
+                        <TextBlock>
+                            <Run Text="Bond: " Foreground="Gray"/>
+                            <Run Text="{Binding Bond}"/>
+                        </TextBlock>
+                        <ListView ItemsSource="{Binding AdData}">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <Run Text="{Binding Key, Mode=OneWay}" Foreground="Gray"/>
+                                        <Run Text="{Binding Value, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Expander.Content>
+            </Expander>
         </DataTemplate>
     </UserControl.Resources>
     
-    <DockPanel>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding DiscoveredDevices}" ItemTemplate="{StaticResource discoveredDevicesTemplate}"/>
+    <DockPanel LastChildFill="True">
+        <ScrollViewer VerticalScrollBarVisibility="Visible">
+            <ItemsControl ItemsSource="{Binding DiscoveredDevices}" ItemTemplate="{StaticResource discoveryTemplate}"/>
         </ScrollViewer>
     </DockPanel>
 </UserControl>

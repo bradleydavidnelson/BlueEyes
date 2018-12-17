@@ -8,7 +8,7 @@
         xmlns:conv="clr-namespace:BlueEyes.Converters"
         xmlns:ports="clr-namespace:System.IO.Ports;assembly=System"
         mc:Ignorable="d"
-        Title="Blue Eyes Interface" Height="350" Width="600">
+        Title="Blue Eyes Interface" Height="400" Width="800">
 
     <Window.Resources>
         <DataTemplate DataType="{x:Type viewModels:ConnectedDeviceViewModel}">
