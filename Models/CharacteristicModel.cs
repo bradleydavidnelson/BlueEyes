@@ -12,7 +12,7 @@ namespace BlueEyes.Models
     public class Characteristic : AttributeGroup
     {
         private ConcurrentDictionary<string, Attribute> _descriptors = new ConcurrentDictionary<string, Attribute>();
-        private double _value;
+        //private double _value;
         private Attribute _valueAttribute = new Attribute();
 
         public ConcurrentDictionary<string,Attribute> Descriptors
@@ -21,11 +21,11 @@ namespace BlueEyes.Models
             set { SetProperty(ref _descriptors, value); }
         }
 
-        public double Value
+        /*public double Value
         {
             get { return _value; }
             set { SetProperty(ref _value, value); }
-        }
+        }*/
 
         public Attribute ValueAttribute
         {

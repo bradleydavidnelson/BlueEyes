@@ -18,19 +18,14 @@
         <ComboBox SelectedIndex="0" Margin="0,0,0,20"
                   SelectedItem="{Binding SelectedPeripheral, Mode=TwoWay}"
                   ItemsSource="{Binding Source={StaticResource ConnectedPeripherals}}"/>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <TextBlock Text="Value:"/>
-            <TextBox Text="{Binding Path=RheostatValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="60"/>
-        </StackPanel>
-        <Slider Value="{Binding Path=RheostatValue, Mode=TwoWay}" Maximum="{Binding Path=RheostatMax}">
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="ValueChanged">
-                    <command:EventToCommand Command="{Binding SliderDelayCommand}"/>
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-        </Slider>
-        <Button Content="Save Value" HorizontalAlignment="Center" Height="24" Margin="0,20" Padding="10,2"
+        <DockPanel Margin="10">
+            <TextBox Text="{Binding Path=RheostatValue, UpdateSourceTrigger=PropertyChanged}" Width="60" DockPanel.Dock="Right"/>
+            <Slider Name="slider" Value="{Binding Path=RheostatValue}" Maximum="1023"/>
+        </DockPanel>
+        <Button Content="Write Value" HorizontalAlignment="Center" Height="24" Margin="0,20" Padding="10,2"
+                Command="{Binding SendValueCommand}"/>
+        <!--Button Content="Save Value" HorizontalAlignment="Center" Height="24" Margin="0,20" Padding="10,2"
                 Visibility="{Binding HasSaveCharacteristic, Converter={StaticResource VisibilityConverter}}"
-                Command="{Binding SaveValueCommand}"/>
+                Command="{Binding SaveValueCommand}"/-->
     </StackPanel>
 </UserControl>

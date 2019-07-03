@@ -1,4 +1,5 @@
 ﻿using BlueEyes.Utilities;
+using System;
 
 namespace BlueEyes.Models
 {
@@ -7,6 +8,7 @@ namespace BlueEyes.Models
         private string _description = null;
         private ushort _handle;
         private byte[] _uuid = new byte[] { };
+        private byte[] _value = new byte[] { };
 
         public Attribute()
         { }
@@ -15,6 +17,12 @@ namespace BlueEyes.Models
         {
             get { return _description; }
             set { SetProperty(ref _description, value); }
+        }
+
+        public string DisplayValue
+        { 
+            get { return BitConverter.ToString(_value); }
+            // TODO Set write
         }
 
         public ushort Handle
@@ -27,6 +35,12 @@ namespace BlueEyes.Models
         {
             get { return _uuid; }
             set { SetProperty(ref _uuid, value); }
+        }
+
+        public byte[] Value
+        {
+            get { return _value; }
+            set { SetProperty(ref _value, value); }
         }
 
         public override string ToString()

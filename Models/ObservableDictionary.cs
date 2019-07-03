@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -141,6 +142,19 @@ namespace BlueEyes.Models
         public bool Remove(TKey key)
         {
             return RemoveWithNotification(key);
+        }
+
+        public bool TryAdd(TKey key, TValue value)
+        {
+            if (this.ContainsKey(key))
+            {
+                return false;
+            }
+            else
+            {
+                Add(key, value);
+                return true;
+            }
         }
 
         /// <summary>

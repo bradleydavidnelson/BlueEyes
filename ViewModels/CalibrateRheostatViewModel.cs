@@ -38,7 +38,7 @@ namespace BlueEyes.ViewModels
         public BLEPeripheralCollection ConnectedPeripherals
         {
             get { return _connectedPeripherals; }
-            private set { SetProperty(ref _connectedPeripherals, value); }
+            set { SetProperty(ref _connectedPeripherals, value); }
         }
 
         public bool HasSaveCharacteristic
@@ -54,13 +54,13 @@ namespace BlueEyes.ViewModels
         public ushort RheostatMax
         {
             get { return _rheostatMax; }
-            private set { SetProperty(ref _rheostatMax, value); }
+            set { SetProperty(ref _rheostatMax, value); }
         }
         
         public ushort RheostatValue
         {
             get { return _rheostatValue; }
-            private set { SetProperty(ref _rheostatValue, value); }
+            set { SetProperty(ref _rheostatValue, value); }
         }
 
         public BLEPeripheral SelectedPeripheral

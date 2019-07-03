@@ -418,6 +418,7 @@ namespace BlueEyes.ViewModels
                     e.type,
                     BitConverter.ToString(e.value)));
 
+                // Identify peripheral
                 BLEPeripheral peripheral;
                 if (!connectedDevices.TryGetConnection(e.connection, out peripheral))
                 {
@@ -425,57 +426,81 @@ namespace BlueEyes.ViewModels
                     return;
                 }
 
-                // DATA PACKET
-                if (e.atthandle == peripheral.Characteristics["Data"].ValueAttribute.Handle)
+                // Identify attribute
+                Models.Attribute attribute;
+                if (!peripheral.TryGetAttribute(e.atthandle, out attribute))
                 {
-                    // Decode packet
-                    // The following decodes each pair of bytes into a single data point
-                    double[] val = new double[e.value.Length/2];
-                    for (int i = 0; i < val.Length; i++)
+                    MessageWriter.LogWrite("Unable to find attribute " + e.connection);
+                    return;
+                }
+
+                attribute.Value = e.value;
+
+                MessageWriter.LogWrite(String.Format("Wrote {0} to {1}", BitConverter.ToString(e.value), attribute.ToString()));
+
+                /*// DATA PACKET
+                if (peripheral.Characteristics.ContainsKey("Data"))
+                {
+                    if (e.atthandle == peripheral.Characteristics["Data"].ValueAttribute.Handle)
                     {
-                        short raw = BitConverter.ToInt16(e.value, 2 * i);
-                        val[i] = raw * 2500 / 2047;
+                        // Decode packet
+                        // The following decodes each pair of bytes into a single data point
+                        double[] val = new double[e.value.Length / 2];
+                        for (int i = 0; i < val.Length; i++)
+                        {
+                            short raw = BitConverter.ToInt16(e.value, 2 * i);
+                            val[i] = raw * 2500 / 2047;
+                        }
+
+                        peripheral.SetCharacteristicValue("Data", val.Average());
+
+                        WriteData(peripheral, val);
                     }
-
-                    peripheral.SetCharacteristicValue("Data", val.Average());
-
-                    WriteData(peripheral, val);
                 }
 
                 // Battery
-                if (e.atthandle == peripheral.Characteristics["Battery"].ValueAttribute.Handle)
+                if (peripheral.Characteristics.ContainsKey("Battery"))
                 {
-                    if (e.value.Length == 2)
+                    if (e.atthandle == peripheral.Characteristics["Battery"].ValueAttribute.Handle)
                     {
-                        // Get data
-                        short data = BitConverter.ToInt16(e.value, 0);
+                        if (e.value.Length == 2)
+                        {
+                            // Get data
+                            short data = BitConverter.ToInt16(e.value, 0);
 
-                        // Calculate rail
-                        peripheral.SetCharacteristicValue("Battery", data * 2500 / 2047);
+                            // Calculate rail
+                            peripheral.SetCharacteristicValue("Battery", data * 2500 / 2047);
+                        }
                     }
                 }
 
                 // TEMPERATURE PACKET
-                if (e.atthandle == peripheral.Characteristics["Temperature"].ValueAttribute.Handle)
+                if (peripheral.Characteristics.ContainsKey("Temperature"))
                 {
-                    short value = BitConverter.ToInt16(e.value, 0);
+                    if (e.atthandle == peripheral.Characteristics["Temperature"].ValueAttribute.Handle)
+                    {
+                        short value = BitConverter.ToInt16(e.value, 0);
 
-                    peripheral.SetCharacteristicValue("Temperature", (value * 2500 / 2047) * 10 / 45 - 169); // Not really characterized, but it should be close
+                        peripheral.SetCharacteristicValue("Temperature", (value * 2500 / 2047) * 10 / 45 - 169); // Not really characterized, but it should be close
+                    }
                 }
 
                 // Low Power Mode
-                if (e.atthandle == peripheral.Characteristics["LPM"].ValueAttribute.Handle)
+                if (peripheral.Characteristics.ContainsKey("LPM"))
                 {
-                    // Sleep bit
-                    if ((e.value[0] & 0x01) == 0x00) // Device is asleep
+                    if (e.atthandle == peripheral.Characteristics["LPM"].ValueAttribute.Handle)
                     {
-                        peripheral.LowPowerMode = BLEPeripheral.LPM.Enabled;
+                        // Sleep bit
+                        if ((e.value[0] & 0x01) == 0x00) // Device is asleep
+                        {
+                            peripheral.LowPowerMode = BLEPeripheral.LPM.Enabled;
+                        }
+                        else // Device is awake
+                        {
+                            peripheral.LowPowerMode = BLEPeripheral.LPM.Disabled;
+                        }
                     }
-                    else // Device is awake
-                    {
-                        peripheral.LowPowerMode = BLEPeripheral.LPM.Disabled;
-                    }
-                }
+                }*/
             });
         }
         #endregion
@@ -484,7 +509,7 @@ namespace BlueEyes.ViewModels
         private void BLEPerformNextTask(BLEPeripheral peripheral)
         {
             // Find all attributes
-            if (peripheral.Attributes.Count == 0)
+            if (peripheral.Attributes.Count() == 0)
             {
                 ushort start = 0x0001;
                 ushort end = 0xFFFF;
@@ -497,7 +522,7 @@ namespace BlueEyes.ViewModels
             }
 
             // Have attributes been found?
-            else if (peripheral.Services.Count == 0)
+            else if (peripheral.Services.Count() == 0)
             {
                 // Perform service discovery
                 ushort start = 0x0001;
@@ -529,13 +554,16 @@ namespace BlueEyes.ViewModels
             }
 
             // Is the low power mode state known?
-            else if (peripheral.Characteristics["LPM"].ValueAttribute.Handle > 0 && peripheral.LowPowerMode == BLEPeripheral.LPM.Unknown)
+            else if (peripheral.Characteristics.ContainsKey("LPM"))
             {
-                // Check sleep mode
-                cmd = bglib.BLECommandATTClientReadByHandle(peripheral.Connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle);
-                MessageWriter.LogWrite("ble_cmd_att_client_read_by_handle: ", string.Format("connection={0}, handle={1}",
-                    peripheral.Connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle));
-                bglib.SendCommand(SelectedPort, cmd);
+                if (peripheral.Characteristics["LPM"].ValueAttribute.Handle > 0 && peripheral.LowPowerMode == BLEPeripheral.LPM.Unknown) //TODO Low-Power mode key not found
+                {
+                    // Check sleep mode
+                    cmd = bglib.BLECommandATTClientReadByHandle(peripheral.Connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle);
+                    MessageWriter.LogWrite("ble_cmd_att_client_read_by_handle: ", string.Format("connection={0}, handle={1}",
+                        peripheral.Connection, peripheral.Characteristics["LPM"].ValueAttribute.Handle));
+                    bglib.SendCommand(SelectedPort, cmd);
+                }
             }
         }
 
@@ -615,28 +643,30 @@ namespace BlueEyes.ViewModels
         [STAThread]
         private void SerialDataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(delegate
+            if (sender == null)
             {
-                SerialPort sp = (SerialPort)sender;
-                
-                // Read all available bytes from serial port in one chunk
-                try
-                {
-                    byte[] inData = new Byte[sp.BytesToRead];
-                    sp.Read(inData, 0, inData.Length);
+                return;
+            }
 
-                    // Parse all bytes read through BGLib parser
-                    for (int i = 0; i < inData.Length; i++)
-                    {
-                        bglib.Parse(inData[i]);
-                    }
-                }
-                catch (Exception ex)
+            BindableSerialPort sp = (BindableSerialPort)sender;
+                
+            // Read all available bytes from serial port in one chunk
+            try
+            {
+                byte[] inData = new Byte[sp.BytesToRead];
+                sp.Read(inData, 0, inData.Length);
+
+                // Parse all bytes read through BGLib parser
+                for (int i = 0; i < inData.Length; i++)
                 {
-                    MessageBox.Show(ex.ToString());
-                    return;
+                    bglib.Parse(inData[i]);
                 }
-            });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+                return;
+            }
         }
 
         [STAThread]
@@ -734,10 +764,31 @@ namespace BlueEyes.ViewModels
                         output.WriteLine(outputLine);
                     }
                 }
-                catch (UnauthorizedAccessException)
+                catch (Exception ex)
                 {
-                    MessageWriter.LogWrite("Error writing file. Check save location.");
+                    MessageBox.Show(ex.Message);
+                    //MessageWriter.LogWrite("Error writing file. Check save location.");
                 }
+            }
+        }
+
+        private void WriteRawData(BLEPeripheral peripheral)
+        {
+            // Add uptime to output line
+            string outputLine = peripheral.UptimeMilliseconds.ToString();
+
+            // Write finished line to file
+            try
+            {
+                using (StreamWriter output = new StreamWriter(peripheral.SaveFile, true))
+                {
+                    output.WriteLine(outputLine);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                //MessageWriter.LogWrite("Error writing file. Check save location.");
             }
         }
         #endregion

@@ -25,8 +25,8 @@ namespace BlueEyes.Models
         private BLEPeripheralCollection connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
 
         // Collections
-        private ConcurrentDictionary<ushort,Attribute> _attributes = new ConcurrentDictionary<ushort,Attribute>();
-        private ConcurrentDictionary<string,Service> _services = new ConcurrentDictionary<string,Service>();
+        private ObservableDictionary<ushort,Attribute> _attributes = new ObservableDictionary<ushort,Attribute>();
+        private ObservableDictionary<string,Service> _services = new ObservableDictionary<string,Service>();
         private ConcurrentDictionary<string,Characteristic> _characteristics = new ConcurrentDictionary<string,Characteristic>();
         private ObservableDictionary<byte, string> _adData = new ObservableDictionary<byte, string>();
 
@@ -99,7 +99,7 @@ namespace BlueEyes.Models
             get { return BitConverter.ToString(_address).Replace('-',':'); }
         }
 
-        public ConcurrentDictionary<ushort,Attribute> Attributes
+        public ObservableDictionary<ushort,Attribute> Attributes
         {
             get { return _attributes; }
             private set { SetProperty(ref _attributes, value); }
@@ -111,7 +111,7 @@ namespace BlueEyes.Models
             {
                 if (_characteristics.ContainsKey("Battery"))
                 {
-                    return _characteristics["Battery"].Value;
+                    return BitConverter.ToDouble(_characteristics["Battery"].Value,0);
                 }
                 return 0;
             }
@@ -203,7 +203,7 @@ namespace BlueEyes.Models
             {
                 if (_characteristics.ContainsKey("Data"))
                 {
-                    return _characteristics["Data"].Value;
+                    return BitConverter.ToDouble(_characteristics["Data"].Value,0);
                 }
                 return 0;
             }
@@ -326,7 +326,7 @@ namespace BlueEyes.Models
             private set { _saveFile = value; }
         }
 
-        public ConcurrentDictionary<string,Service> Services
+        public ObservableDictionary<string,Service> Services
         {
             get { return _services; }
             set { SetProperty(ref _services, value); }
@@ -344,7 +344,7 @@ namespace BlueEyes.Models
             {
                 if (_characteristics.ContainsKey("Temperature"))
                 {
-                    return _characteristics["Temperature"].Value;
+                    return BitConverter.ToDouble(_characteristics["Temperature"].Value,0);
                 }
                 return 0;
             }
@@ -404,6 +404,11 @@ namespace BlueEyes.Models
         public bool TryAddService(Service s)
         {
             return Services.TryAdd(s.Description, s);
+        }
+
+        public bool TryGetAttribute(ushort handle, out Attribute result)
+        {
+            return _attributes.TryGetValue(handle, out result);
         }
 
         public void AddNewService(ushort start, ushort end, byte[] uuid)
@@ -531,7 +536,7 @@ namespace BlueEyes.Models
             try
             {
                 string fileLocation = Properties.Settings.Default.SaveLocation + "\\" + Name + "_" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + DateTime.Now.Hour + DateTime.Now.Minute + DateTime.Now.Second + ".csv";
-                File.Create(fileLocation);
+                //File.Create(fileLocation);
                 SaveFile = fileLocation;
             }
             catch(UnauthorizedAccessException ex)
@@ -625,12 +630,6 @@ namespace BlueEyes.Models
                     }
                 }
             }
-        }
-
-        public void SetCharacteristicValue(string name, double value)
-        {
-            Characteristics[name].Value = value;
-            NotifyPropertyChanged(name);
         }
 
         private void SleepWake(object obj)

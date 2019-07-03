@@ -8,23 +8,16 @@ using System.Windows.Input;
 
 namespace BlueEyes.ViewModels
 {
-    class ConnectedDeviceViewModel : BindableBase
+    class GATTViewModel : BindableBase
     {
-        private BLEPeripheralCollection _connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
-        private GATTViewModel _GATTVM = new GATTViewModel();
+        //private BLEPeripheralCollection _connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
         //private ICommand selectColumnsCommand;
 
-        public BLEPeripheralCollection ConnectedDevices
+        /*public BLEPeripheralCollection ConnectedDevices
         {
             get { return _connectedDevices; }
             set { _connectedDevices = value; }
-        }
-
-        public GATTViewModel GATT
-        {
-            get { return _GATTVM; }
-            set { SetProperty(ref _GATTVM, value); }
-        }
+        }*/
 
         /*public ICommand SelectColumnsCommand
         {

@@ -1,0 +1,46 @@
+﻿<UserControl x:Class="BlueEyes.Views.GATTView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:BlueEyes.Views"
+             xmlns:converters="clr-namespace:BlueEyes.Converters"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:ZeroToVisibilityConverter x:Key="VisibilityConverter" ZeroValue="Hidden" NonZeroValue="Visible"/>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <TextBlock Text="Hello"/>
+        <DataGrid HorizontalAlignment="Left" VerticalAlignment="Top" ItemsSource="{Binding ConnectedDevices}" AutoGenerateColumns="False" 
+                  Visibility="{Binding ConnectedDevices.Count, Converter={StaticResource VisibilityConverter}}">
+
+
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Select Columns..." Command="{Binding SelectColumnsCommand}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+
+            <DataGrid.RowHeaderStyle>
+                <Style TargetType="{x:Type DataGridRowHeader}">
+                    <Setter Property="Content" Value="{Binding Name}" />
+                </Style>
+            </DataGrid.RowHeaderStyle>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Data (mV)" Binding="{Binding Data}"/>
+                <DataGridTextColumn Header="Supply (mV)" Binding="{Binding Battery}"/>
+                <DataGridTextColumn Header="Temperature (C)" Binding="{Binding Temperature}"/>
+                <DataGridTextColumn Header="Uptime" Binding="{Binding Uptime}"/>
+                <DataGridTemplateColumn Header="LPM">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding LPMAction}" Command="{Binding LPMCommand}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

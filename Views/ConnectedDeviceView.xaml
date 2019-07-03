@@ -3,43 +3,71 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:BlueEyes.Views"
+             xmlns:views="clr-namespace:BlueEyes.Views"
+             xmlns:viewModels="clr-namespace:BlueEyes.ViewModels"
              xmlns:converters="clr-namespace:BlueEyes.Converters"
              mc:Ignorable="d">
 
     <UserControl.Resources>
+        <DataTemplate x:Key="connectedTemplate">
+            <DataGrid HorizontalAlignment="Left" VerticalAlignment="Top" ItemsSource="{Binding Services}" AutoGenerateColumns="False">
+                <DataGrid.RowHeaderStyle>
+                    <Style TargetType="{x:Type DataGridRowHeader}">
+                        <Setter Property="Content" Value="{Binding Key}" />
+                    </Style>
+                </DataGrid.RowHeaderStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Value" Binding="{Binding Value.DisplayValue}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!--Expander Margin="4,4">
+                <Expander.Header>
+                    <DockPanel  HorizontalAlignment="{Binding Path=HorizontalAlignment,  RelativeSource={RelativeSource FindAncestor,  AncestorType={x:Type ContentPresenter}}, Mode=OneWayToSource}" >
+                        <Button DockPanel.Dock="Right" Content="{Binding Path=ConnectAction}" Width="80" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding Path=ConnectCommand}"/>
+
+                        <StackPanel Orientation="Vertical" DockPanel.Dock="Left">
+                            <TextBlock Text="{Binding Path=Name}" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Path=AddressString}" FontSize="10" />
+                        </StackPanel>
+                    </DockPanel>
+                </Expander.Header>
+
+                <Expander.Content>
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock>
+                            <Run Text="RSSI: " Foreground="Gray"/>
+                            <Run Text="{Binding RSSI}"/>
+                            <Run Text=" dBm"/>
+                        </TextBlock>
+                        <TextBlock>
+                            <Run Text="Bond: " Foreground="Gray"/>
+                            <Run Text="{Binding Bond}"/>
+                        </TextBlock>
+                        <ListView ItemsSource="{Binding AdData}">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                                        <Run Text="{Binding Key, Mode=OneWay}" Foreground="Gray"/>
+                                        <Run Text="{Binding Value, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Expander.Content>
+            </-->
+        </DataTemplate>
+        <DataTemplate x:Key="This">
+            <DataGrid HorizontalAlignment="Left" VerticalAlignment="Top" ItemsSource="{Binding Attributes}" AutoGenerateColumns="True">
+                
+            </DataGrid>
+        </DataTemplate>
         <converters:ZeroToVisibilityConverter x:Key="VisibilityConverter" ZeroValue="Hidden" NonZeroValue="Visible"/>
     </UserControl.Resources>
 
     <DockPanel>
-        <DataGrid HorizontalAlignment="Left" VerticalAlignment="Top" ItemsSource="{Binding ConnectedDevices}" AutoGenerateColumns="False" 
-                  Visibility="{Binding ConnectedDevices.Count, Converter={StaticResource VisibilityConverter}}">
-           
-            
-            <DataGrid.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Select Columns..." Command="{Binding SelectColumnsCommand}"/>
-                </ContextMenu>
-            </DataGrid.ContextMenu>
-            
-            <DataGrid.RowHeaderStyle>
-                <Style TargetType="{x:Type DataGridRowHeader}">
-                    <Setter Property="Content" Value="{Binding Name}" />
-                </Style>
-            </DataGrid.RowHeaderStyle>
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Data (mV)" Binding="{Binding Data}"/>
-                <DataGridTextColumn Header="Supply (mV)" Binding="{Binding Battery}"/>
-                <DataGridTextColumn Header="Temperature (C)" Binding="{Binding Temperature}"/>
-                <DataGridTextColumn Header="Uptime" Binding="{Binding Uptime}"/>
-                <DataGridTemplateColumn Header="LPM">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Button Content="{Binding LPMAction}" Command="{Binding LPMCommand}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+        <TabControl ItemsSource="{Binding ConnectedDevices}" Visibility="{Binding ConnectedDevices.Count, Converter={StaticResource VisibilityConverter}}" ContentTemplate="{StaticResource connectedTemplate}">
+        </TabControl>
     </DockPanel>
 </UserControl>
