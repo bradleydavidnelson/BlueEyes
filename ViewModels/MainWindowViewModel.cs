@@ -3,6 +3,7 @@ using BlueEyes.Utilities;
 using BlueEyes.Views;
 using GalaSoft.MvvmLight.Messaging;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Ports;
@@ -435,8 +436,19 @@ namespace BlueEyes.ViewModels
                 }
 
                 attribute.Value = e.value;
+                WriteRawData(peripheral);
+                //MessageWriter.LogWrite(String.Format("Wrote {0} to {1}", BitConverter.ToString(e.value), attribute.ToString()));
 
-                MessageWriter.LogWrite(String.Format("Wrote {0} to {1}", BitConverter.ToString(e.value), attribute.ToString()));
+                if (peripheral.Services.ContainsKey("PiezoelectricService"))
+                {
+                    if (peripheral.Services["PiezoelectricService"].Characteristics.ContainsKey("PiezoVoltage"))
+                    {
+                        if (peripheral.Services["PiezoelectricService"].Characteristics["PiezoVoltage"].ValueAttribute.Handle == e.atthandle)
+                        {
+                            WritePzVoltData(peripheral);
+                        }
+                    }
+                }
 
                 /*// DATA PACKET
                 if (peripheral.Characteristics.ContainsKey("Data"))
@@ -777,6 +789,11 @@ namespace BlueEyes.ViewModels
             // Add uptime to output line
             string outputLine = peripheral.UptimeMilliseconds.ToString();
 
+            foreach (Models.Attribute attr in peripheral.Attributes.Values)
+            {
+                outputLine += string.Format(",{0}",BitConverter.ToString(attr.Value));
+            }
+
             // Write finished line to file
             try
             {
@@ -789,6 +806,35 @@ namespace BlueEyes.ViewModels
             {
                 MessageBox.Show(ex.Message);
                 //MessageWriter.LogWrite("Error writing file. Check save location.");
+            }
+        }
+
+        private void WritePzVoltData(BLEPeripheral peripheral)
+        {
+            if (peripheral.Characteristics.ContainsKey("PiezoVoltage"))
+            {
+                long timestamp = peripheral.UptimeMilliseconds;
+                long period = 333;
+
+                Models.Attribute attr = peripheral.Characteristics["PiezoVoltage"].ValueAttribute;
+                for (int i = 0; i < attr.Value.Length/2; i++)
+                {
+                    long time = timestamp - (period / (attr.Value.Length/2) * (((attr.Value.Length/2)-1) - i));
+                    ushort value = BitConverter.ToUInt16(attr.Value, 2 * i);
+
+                    try
+                    {
+                        using (StreamWriter output = new StreamWriter(peripheral.SaveFile.Substring(0, peripheral.SaveFile.Length - 4) + "volt.csv", true))
+                        {
+                            output.WriteLine(time + "," + value);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                        //MessageWriter.LogWrite("Error writing file. Check save location.");
+                    }
+                }
             }
         }
         #endregion

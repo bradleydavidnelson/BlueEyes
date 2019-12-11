@@ -12,7 +12,6 @@ namespace BlueEyes.ViewModels
     {
         private BLEPeripheralCollection _connectedDevices = (BLEPeripheralCollection)Application.Current.FindResource("ConnectedPeripherals");
         private GATTViewModel _GATTVM = new GATTViewModel();
-        //private ICommand selectColumnsCommand;
 
         public BLEPeripheralCollection ConnectedDevices
         {
@@ -25,23 +24,5 @@ namespace BlueEyes.ViewModels
             get { return _GATTVM; }
             set { SetProperty(ref _GATTVM, value); }
         }
-
-        /*public ICommand SelectColumnsCommand
-        {
-            get
-            {
-                if (selectColumnsCommand == null)
-                {
-                    selectColumnsCommand = new RelayCommand(OpenColumnSelector);
-                }
-                return selectColumnsCommand;
-            }
-        }
-
-        private void OpenColumnSelector(object obj)
-        {
-            Window selector = new DataDisplaySelectorView();
-            selector.Show();
-        }*/
     }
 }

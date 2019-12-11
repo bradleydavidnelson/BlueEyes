@@ -125,6 +125,9 @@
     <Compile Include="Views\DataDisplaySelectorView.xaml.cs">
       <DependentUpon>DataDisplaySelectorView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\EditGATTValueWindow.xaml.cs">
+      <DependentUpon>EditGATTValueWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\GATTView.xaml.cs">
       <DependentUpon>GATTView.xaml</DependentUpon>
     </Compile>
@@ -149,6 +152,10 @@
       <DependentUpon>SensorWindowView.xaml</DependentUpon>
     </Compile>
     <Page Include="Views\DataDisplaySelectorView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\EditGATTValueWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

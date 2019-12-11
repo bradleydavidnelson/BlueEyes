@@ -27,8 +27,9 @@ namespace BlueEyes.Models
         // Collections
         private ObservableDictionary<ushort,Attribute> _attributes = new ObservableDictionary<ushort,Attribute>();
         private ObservableDictionary<string,Service> _services = new ObservableDictionary<string,Service>();
-        private ConcurrentDictionary<string,Characteristic> _characteristics = new ConcurrentDictionary<string,Characteristic>();
+        private ObservableDictionary<string,Characteristic> _characteristics = new ObservableDictionary<string,Characteristic>();
         private ObservableDictionary<byte, string> _adData = new ObservableDictionary<byte, string>();
+        private ObservableCollection<Attribute> _observableAttributes = new ObservableCollection<Attribute>();
 
         // Bluetooth 
         private byte[] _address;
@@ -123,7 +124,7 @@ namespace BlueEyes.Models
             set { SetProperty(ref _bond, value); }
         }
 
-        public ConcurrentDictionary<string,Characteristic> Characteristics
+        public ObservableDictionary<string,Characteristic> Characteristics
         {
             get { return _characteristics; }
             set { SetProperty(ref _characteristics, value); }
@@ -305,6 +306,11 @@ namespace BlueEyes.Models
             set { SetProperty(ref _name, value); }
         }
 
+        public ObservableCollection<Attribute> ObservableAttributes
+        {
+            get { return _observableAttributes; }
+        }
+
         public int RSSI
         {
             get { return _rssi; }
@@ -381,10 +387,12 @@ namespace BlueEyes.Models
         public void AddNewAttribute(ushort handle, byte[] uuid)
         {
             Attribute attr = new Attribute();
+            attr.ParentPeripheral = this;
             attr.Handle = handle;
             attr.UUID = uuid;
             attr.Description = Bluetooth.Parser.Lookup(uuid);
             Attributes.TryAdd(handle, attr);
+            ObservableAttributes.Add(attr);
         }
 
         private bool CanPerformConnectCommand(object obj)
@@ -471,6 +479,16 @@ namespace BlueEyes.Models
             connectionTimer.Interval = new TimeSpan(0, 0, 3);
             connectionTimer.Start();
 
+            // Track uptime
+            _uptimeDispatcher.IsEnabled = true;
+            if (_uptime.IsRunning == false)
+            {
+                _uptime.Start();
+            }
+
+            // New save file
+            SaveFile = null;
+
             ConnectionState = ConnState.Connecting;
         }
 
@@ -498,37 +516,15 @@ namespace BlueEyes.Models
             byte[] cmd = bglib.BLECommandConnectionDisconnect(Connection);
             MessageWriter.LogWrite("ble_cmd_connection_disconnect: ", string.Format("connection={0}", Connection));
             MessageWriter.BLEWrite(cmd);
-        }
 
-        /*public IItemProperties GetDataCharacteristics()
-        {
-            List<ItemPropertyInfo> result = new List<ItemPropertyInfo>();
-            
-            foreach (Characteristic c in Characteristics.Values)
+            // Stop tracking uptime
+            _uptimeDispatcher.IsEnabled = false;
+            if (_uptime.IsRunning == true)
             {
-                // Identify name
-                if (c.Descriptors.ContainsKey("CharacteristicUserDescription"))
-                {
-                    // Do this
-                }
-                else
-                {
-                    string name = c.Description;
-                }
-
-                // Identify type
-                if (c.Descriptors.ContainsKey("CharacteristicPresentationFormat"))
-                {
-                    // DO this
-                }
-                else
-                {
-                    Type type = Type.GetType(;
-                }
-
-                result.Add(new ItemPropertyInfo(,,null))
+                _uptime.Reset();
+                NotifyPropertyChanged("Uptime");
             }
-        }*/
+        }
 
         private void createSaveFile()
         {
@@ -559,7 +555,7 @@ namespace BlueEyes.Models
                 Connection, Characteristics["LPM"].ValueAttribute.Handle, BitConverter.ToString(lpm_bit)));
             MessageWriter.BLEWrite(cmd);
 
-            // Stop tracking uptime
+            /* Stop tracking uptime
             _uptimeDispatcher.IsEnabled = false;
             if (_uptime.IsRunning == true)
             {
@@ -568,7 +564,7 @@ namespace BlueEyes.Models
             }
 
             // New save file
-            SaveFile = null;
+            SaveFile = null;*/
         }
 
         private void LPMExit()
@@ -580,12 +576,12 @@ namespace BlueEyes.Models
                 Connection, Characteristics["LPM"].ValueAttribute.Handle, BitConverter.ToString(lpm_bit)));
             MessageWriter.BLEWrite(cmd);
 
-            // Track uptime
+            /* Track uptime
             _uptimeDispatcher.IsEnabled = true;
             if (_uptime.IsRunning == false)
             {
                 _uptime.Start();
-            }
+            }*/
         }
 
         public void PopulateService(Service s)
