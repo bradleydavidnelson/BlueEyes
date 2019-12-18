@@ -25,7 +25,7 @@ Required software drivers are currently available at [Silicon Labs](https://www.
 This project is organized using the Model-View-ViewModel (MVVM) structure. Views are elements that the user interacts with directly, such as windows and UI elements. ViewModels are associated with each View, and provide the behind-the-scenes logic for each view. Models contain data which may be used within ViewModels.
 
 On start-up, two windows will be loaded: a main window and a debug window. The sequence to connect to a sensor is performed as follows: (1) Select the BLED112 from the drop-down menu of USB elements (`Bluegiga Bluetooth Low Energy (COM?)`).
-![](https://github.com/bradleydavidnelson/readme-assets\BlueEyes\port-select.gif)
+![](https://github.com/bradleydavidnelson/BlueEyes\Media\port-select.gif)
 
 (2) Push the `Attach` button to open serial communication with the selected USB component and begin scanning. Identified BLE devices will appear in the Discovered Device panel on the left. (3) Push the `Connect` button next to the desired device to establish a Bluetooth connection with it. The connected device will appear in the Connected Devices panel on the right.
 
