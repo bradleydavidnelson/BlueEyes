@@ -5,13 +5,13 @@ BlueEyes is a software interface for Bluetooth Low-Energy sensors developed usin
 ---
 ## Table of Contents
 
-- [Installation](#installation)
+- [Getting Started](#getting-started)
 - [Usage](#usage)
 - [Contributors](#contributors)
 - [License](#license)
 
 ---
-## Installation
+## Getting Started
 
 This software may be run in Visual Studio. The community version is [available for free](https://visualstudio.microsoft.com/downloads/). Compiled executables will be located in `BlueEyes/bin/Debug` or `BlueEyes/bin/Release` for debug and release versions respectively.
 
@@ -26,7 +26,7 @@ This project is organized using the Model-View-ViewModel (MVVM) structure. Views
 
 On start-up, two windows will be loaded: a main window and a debug window. The sequence to connect to a sensor is performed as follows: 
 
-> 1. Select the BLED112 from the drop-down menu of USB elements (`Bluegiga Bluetooth Low Energy (COMX)`). ![](https://github.com/bradleydavidnelson/BlueEyes/blob/master/Media/port-select.gif?raw=true)
+> 1. Select `Bluegiga Bluetooth Low Energy` from the drop-down menu of USB elements. ![](https://github.com/bradleydavidnelson/BlueEyes/blob/master/Media/port-select.gif?raw=true)
 > 1. Push the `Attach` button to open serial communication with the selected USB component and begin scanning. Identified BLE devices will appear in the Discovered Device panel on the left.
 > 1. Push the `Connect` button next to the desired device to establish a Bluetooth connection with it. The connected device will appear in the Connected Devices panel on the right.
 
